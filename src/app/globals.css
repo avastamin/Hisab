@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+/*
+ * Same palette as the mobile app's src/theme/tokens.ts, kept in sync on purpose:
+ * a green / earth-tone look (crops, growth, rain) that works for a salaried
+ * household or a farming one. Light values first, dark overrides below.
+ */
+:root {
+  --bg: #f6faf5;
+  --surface: #ffffff;
+  --surface-alt: #eef6ec;
+  --border-c: #dce8da;
+  --text-primary: #1b2a1e;
+  --text-secondary: #5a6b57;
+  --primary: #2f7a4d;
+  --primary-text: #ffffff;
+  --accent: #8bae68;
+  --positive: #2f7a4d;
+  --negative: #b3441e;
+  --warning: #c08a1e;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1712;
+    --surface: #17211a;
+    --surface-alt: #1e2b22;
+    --border-c: #2a3a2e;
+    --text-primary: #eaf3e8;
+    --text-secondary: #a9bba4;
+    --primary: #5faf7c;
+    --primary-text: #0f1712;
+    --accent: #9bc97d;
+    --positive: #5faf7c;
+    --negative: #e08a66;
+    --warning: #e0b65e;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-alt: var(--surface-alt);
+  --color-border: var(--border-c);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-primary: var(--primary);
+  --color-primary-text: var(--primary-text);
+  --color-accent: var(--accent);
+  --color-positive: var(--positive);
+  --color-negative: var(--negative);
+  --color-warning: var(--warning);
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text-primary);
+}

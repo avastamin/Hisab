@@ -1,0 +1,9 @@
+[build]
+  command = "npm run build"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Netlify auto-detects Next.js and installs its own build plugin
+# (@netlify/plugin-nextjs) to handle routing, server rendering,
+# and the proxy/middleware — no manual adapter config needed.
