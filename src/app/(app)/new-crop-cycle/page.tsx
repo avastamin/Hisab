@@ -13,17 +13,21 @@ export default async function NewCropCyclePage() {
     <div className="flex flex-col gap-5">
       <PageHeader title="New Crop Cycle" backHref="/crop-cycles" />
 
-      {crops.length === 0 ? (
-        <Card>
-          <p className="mb-3 text-sm text-text-secondary">Add a crop first (e.g. &quot;Tomato&quot;, &quot;Rice&quot;).</p>
-          <form action={addCrop} className="flex gap-2">
-            <TextInput type="text" name="name" placeholder="Crop name" required className="flex-1" />
-            <button type="submit" className="rounded-lg bg-primary px-4 py-2.5 font-semibold text-primary-text">
-              Add
-            </button>
-          </form>
-        </Card>
-      ) : (
+      <Card>
+        <p className="mb-3 text-sm text-text-secondary">
+          {crops.length === 0
+            ? 'Add a crop first (e.g. "Tomato", "Rice").'
+            : "Growing something new? Add it to your crop list."}
+        </p>
+        <form action={addCrop} className="flex gap-2">
+          <TextInput type="text" name="name" placeholder="Crop name" required className="flex-1" />
+          <button type="submit" className="rounded-lg bg-primary px-4 py-2.5 font-semibold text-primary-text">
+            Add
+          </button>
+        </form>
+      </Card>
+
+      {crops.length > 0 ? (
         <Card>
           <form action={addCropCycle} className="flex flex-col gap-4">
             <Field label="Crop">
@@ -73,7 +77,7 @@ export default async function NewCropCyclePage() {
             <SubmitButton>Create Crop Cycle</SubmitButton>
           </form>
         </Card>
-      )}
+      ) : null}
     </div>
   );
 }

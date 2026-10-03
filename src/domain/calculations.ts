@@ -128,7 +128,22 @@ export function cropCycleFinancials(
   };
 }
 
-/** Household (non-crop) spending: every cost center that is NOT a crop cycle. */
+/** Narrows to the entries booked against cost centers of the given type(s), within an optional date range. */
+function entriesForCostCenterTypes(
+  types: readonly CostCenter["type"][],
+  costCenters: readonly CostCenter[],
+  expenseEntries: readonly ExpenseEntry[],
+  laborEntries: readonly LaborEntry[],
+  range?: DateRange,
+): MoneyEntry[] {
+  const matchingIds = new Set(costCenters.filter((c) => types.includes(c.type)).map((c) => c.id));
+  return filterByDateRange(
+    [...expenseEntries, ...laborEntries].filter((e) => matchingIds.has(e.costCenterId)),
+    range,
+  );
+}
+
+/** Household spending: "general", "vehicle", and "person" cost centers — excludes crop cycles and general farm spend. */
 export function householdSpendingByCategory(
   costCenters: readonly CostCenter[],
   expenseEntries: readonly ExpenseEntry[],
@@ -136,13 +151,25 @@ export function householdSpendingByCategory(
   categories: readonly Category[],
   range?: DateRange,
 ): CategoryTotal[] {
-  const householdCostCenterIds = new Set(
-    costCenters.filter((c) => c.type !== "crop_cycle").map((c) => c.id),
-  );
-  const entries = filterByDateRange(
-    [...expenseEntries, ...laborEntries].filter((e) => householdCostCenterIds.has(e.costCenterId)),
+  const entries = entriesForCostCenterTypes(
+    ["general", "vehicle", "person"],
+    costCenters,
+    expenseEntries,
+    laborEntries,
     range,
   );
+  return totalsByCategory(entries, categories);
+}
+
+/** General farm/agro spending not yet tied to a specific crop cycle (e.g. bulk fertilizer) — "farm" cost centers only. */
+export function farmSpendingByCategory(
+  costCenters: readonly CostCenter[],
+  expenseEntries: readonly ExpenseEntry[],
+  laborEntries: readonly LaborEntry[],
+  categories: readonly Category[],
+  range?: DateRange,
+): CategoryTotal[] {
+  const entries = entriesForCostCenterTypes(["farm"], costCenters, expenseEntries, laborEntries, range);
   return totalsByCategory(entries, categories);
 }
 

@@ -4,8 +4,10 @@
  * Design note (from the product spec): everything is one ledger. An entry
  * (expense, labor, or sale) always points at a CostCenter, and a CostCenter
  * can represent a crop cycle, a vehicle, a person (e.g. a child's schooling),
- * or "general" household spending with no specific target. Crops are just
- * the first kind of thing tracked this way, not a special case.
+ * "general" household spending with no specific target, or "farm" spending
+ * that's agro-related but not yet tied to one specific crop cycle (e.g. bulk
+ * fertilizer bought before it's allocated). Crops are just the first kind of
+ * thing tracked this way, not a special case.
  *
  * Money note: amounts are stored as plain decimal numbers in the household's
  * single currency (BDT). All aggregation helpers round to 2 decimal places
@@ -16,7 +18,7 @@
 export type ISODateString = string; // e.g. "2026-09-28"
 export type ISODateTimeString = string; // e.g. "2026-09-28T10:15:00.000Z"
 
-export type CostCenterType = "crop_cycle" | "vehicle" | "person" | "general";
+export type CostCenterType = "crop_cycle" | "vehicle" | "person" | "general" | "farm";
 
 export type CropCycleStatus = "planned" | "growing" | "harvested" | "closed";
 

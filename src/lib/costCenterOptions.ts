@@ -4,6 +4,7 @@ const TYPE_LABEL: Record<Exclude<CostCenter["type"], "crop_cycle">, string> = {
   vehicle: "Vehicle",
   person: "Person",
   general: "Household",
+  farm: "Farm",
 };
 
 export interface SelectOption {

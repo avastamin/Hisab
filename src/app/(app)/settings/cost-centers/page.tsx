@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { Field, TextInput, Select, SubmitButton } from "@/components/form/Field";
 import { Trash2 } from "lucide-react";
 
-const TYPE_LABEL: Record<string, string> = { vehicle: "Vehicle", person: "Person", general: "Household" };
+const TYPE_LABEL: Record<string, string> = { vehicle: "Vehicle", person: "Person", general: "Household", farm: "Farm" };
 
 export default async function CostCentersPage() {
   const { costCenters } = await getAppData();
@@ -23,6 +23,7 @@ export default async function CostCentersPage() {
           <Field label="Type">
             <Select name="type" defaultValue="general">
               <option value="general">Household (general)</option>
+              <option value="farm">Farm (general, not tied to a crop cycle)</option>
               <option value="vehicle">Vehicle</option>
               <option value="person">Person</option>
             </Select>

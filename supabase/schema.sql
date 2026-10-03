@@ -53,11 +53,18 @@ create table if not exists tags (
 create table if not exists cost_centers (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
-  type text not null check (type in ('crop_cycle', 'vehicle', 'person', 'general')),
+  type text not null check (type in ('crop_cycle', 'vehicle', 'person', 'general', 'farm')),
   crop_cycle_id uuid references crop_cycles (id) on delete cascade,
   name text not null,
   created_at timestamptz not null default now()
 );
+
+-- Widen the type check for a database that already had this table from before
+-- "farm" existed (create table if not exists above is a no-op there, since
+-- the table already exists, so the old constraint has to be swapped in place).
+alter table cost_centers drop constraint if exists cost_centers_type_check;
+alter table cost_centers add constraint cost_centers_type_check
+  check (type in ('crop_cycle', 'vehicle', 'person', 'general', 'farm'));
 
 create table if not exists workers (
   id uuid primary key default gen_random_uuid(),
@@ -143,6 +150,9 @@ alter table labor_entries enable row level security;
 alter table sale_entries enable row level security;
 alter table budget_settings enable row level security;
 
+-- Each policy is dropped first so this whole script can be re-run on a
+-- database that already has it applied (e.g. to pick up a schema update)
+-- without erroring on "policy already exists".
 do $$
 declare
   t text;
@@ -152,28 +162,36 @@ begin
     'expense_entries', 'labor_entries', 'sale_entries'
   ])
   loop
+    execute format('drop policy if exists "owner_select_%1$s" on %1$s;', t);
     execute format(
       'create policy "owner_select_%1$s" on %1$s for select using (auth.uid() = user_id);', t
     );
+    execute format('drop policy if exists "owner_insert_%1$s" on %1$s;', t);
     execute format(
       'create policy "owner_insert_%1$s" on %1$s for insert with check (auth.uid() = user_id);', t
     );
+    execute format('drop policy if exists "owner_update_%1$s" on %1$s;', t);
     execute format(
       'create policy "owner_update_%1$s" on %1$s for update using (auth.uid() = user_id) with check (auth.uid() = user_id);', t
     );
+    execute format('drop policy if exists "owner_delete_%1$s" on %1$s;', t);
     execute format(
       'create policy "owner_delete_%1$s" on %1$s for delete using (auth.uid() = user_id);', t
     );
   end loop;
 end $$;
 
+drop policy if exists "owner_select_budget_settings" on budget_settings;
 create policy "owner_select_budget_settings" on budget_settings for select using (auth.uid() = user_id);
+drop policy if exists "owner_insert_budget_settings" on budget_settings;
 create policy "owner_insert_budget_settings" on budget_settings for insert with check (auth.uid() = user_id);
+drop policy if exists "owner_update_budget_settings" on budget_settings;
 create policy "owner_update_budget_settings" on budget_settings for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 -- ---------------------------------------------------------------------------
--- Seed sensible defaults for a brand-new user (built-in categories), the same
--- ones the mobile app ships with, so the household screens aren't empty on day one.
+-- Seed sensible defaults for a brand-new user (built-in categories and tags),
+-- covering both farm/Agro and household/Family use, so the screens aren't
+-- empty on day one.
 -- ---------------------------------------------------------------------------
 
 create or replace function public.handle_new_user()
@@ -183,23 +201,51 @@ security definer set search_path = public
 as $$
 begin
   insert into categories (user_id, name, kind, is_built_in) values
+    -- Agro / farm
+    (new.id, 'Organic Fertilizer', 'cost', true),
+    (new.id, 'Chemical Fertilizer', 'cost', true),
     (new.id, 'Fertilizer', 'cost', true),
     (new.id, 'Seeds', 'cost', true),
-    (new.id, 'Labor', 'cost', true),
     (new.id, 'Pesticide', 'cost', true),
+    (new.id, 'Herbicide', 'cost', true),
+    (new.id, 'Fungicide', 'cost', true),
+    (new.id, 'Labor', 'cost', true),
     (new.id, 'Irrigation', 'cost', true),
     (new.id, 'Equipment', 'cost', true),
+    (new.id, 'Land Rent', 'cost', true),
+    (new.id, 'Nursery / Saplings', 'cost', true),
     (new.id, 'Transport', 'cost', true),
+    -- Family / household
     (new.id, 'Groceries', 'cost', true),
+    (new.id, 'Fish', 'cost', true),
+    (new.id, 'Meat', 'cost', true),
+    (new.id, 'Vegetables', 'cost', true),
+    (new.id, 'Dairy & Eggs', 'cost', true),
+    (new.id, 'Processed Foods', 'cost', true),
     (new.id, 'Medicine', 'cost', true),
     (new.id, 'Education', 'cost', true),
     (new.id, 'Fuel', 'cost', true),
+    (new.id, 'Utilities', 'cost', true),
+    (new.id, 'House Rent', 'cost', true),
+    (new.id, 'Clothing', 'cost', true),
     (new.id, 'Other', 'cost', true),
+    -- Revenue
     (new.id, 'Harvest Sale', 'revenue', true),
     (new.id, 'Other Income', 'revenue', true);
 
+  insert into tags (user_id, name) values
+    (new.id, 'Organic'),
+    (new.id, 'Chemical / Synthetic'),
+    (new.id, 'Wholesale'),
+    (new.id, 'Bulk Purchase'),
+    (new.id, 'Emergency / Urgent'),
+    (new.id, 'Discount / Sale'),
+    (new.id, 'Festival / Eid'),
+    (new.id, 'Online Order');
+
   insert into cost_centers (user_id, type, name) values
-    (new.id, 'general', 'General household');
+    (new.id, 'general', 'General household'),
+    (new.id, 'farm', 'General farm');
 
   insert into budget_settings (user_id, enabled, monthly_amount) values (new.id, false, 0);
 
@@ -211,3 +257,91 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
+
+-- ---------------------------------------------------------------------------
+-- Backfill: the trigger above only fires for NEW signups (it listens for
+-- INSERTs on auth.users), so an account created before this seed list existed
+-- - or before schema.sql was first run at all - never got any categories,
+-- tags, cost center, or budget row. This section is safe to re-run any
+-- number of times: it only inserts a given default for a user who doesn't
+-- already have one with that exact name (or, for budget_settings, one at
+-- all), so it will never duplicate rows or touch anything you've already
+-- added or renamed yourself.
+-- ---------------------------------------------------------------------------
+
+insert into categories (user_id, name, kind, is_built_in)
+select u.id, d.name, d.kind, true
+from auth.users u
+cross join (values
+  ('Organic Fertilizer', 'cost'),
+  ('Chemical Fertilizer', 'cost'),
+  ('Fertilizer', 'cost'),
+  ('Seeds', 'cost'),
+  ('Pesticide', 'cost'),
+  ('Herbicide', 'cost'),
+  ('Fungicide', 'cost'),
+  ('Labor', 'cost'),
+  ('Irrigation', 'cost'),
+  ('Equipment', 'cost'),
+  ('Land Rent', 'cost'),
+  ('Nursery / Saplings', 'cost'),
+  ('Transport', 'cost'),
+  ('Groceries', 'cost'),
+  ('Fish', 'cost'),
+  ('Meat', 'cost'),
+  ('Vegetables', 'cost'),
+  ('Dairy & Eggs', 'cost'),
+  ('Processed Foods', 'cost'),
+  ('Medicine', 'cost'),
+  ('Education', 'cost'),
+  ('Fuel', 'cost'),
+  ('Utilities', 'cost'),
+  ('House Rent', 'cost'),
+  ('Clothing', 'cost'),
+  ('Other', 'cost'),
+  ('Harvest Sale', 'revenue'),
+  ('Other Income', 'revenue')
+) as d(name, kind)
+where not exists (
+  select 1 from categories existing
+  where existing.user_id = u.id and existing.name = d.name
+);
+
+insert into tags (user_id, name)
+select u.id, d.name
+from auth.users u
+cross join (values
+  ('Organic'),
+  ('Chemical / Synthetic'),
+  ('Wholesale'),
+  ('Bulk Purchase'),
+  ('Emergency / Urgent'),
+  ('Discount / Sale'),
+  ('Festival / Eid'),
+  ('Online Order')
+) as d(name)
+where not exists (
+  select 1 from tags existing
+  where existing.user_id = u.id and existing.name = d.name
+);
+
+insert into cost_centers (user_id, type, name)
+select u.id, 'general', 'General household'
+from auth.users u
+where not exists (
+  select 1 from cost_centers existing
+  where existing.user_id = u.id and existing.type = 'general'
+);
+
+insert into cost_centers (user_id, type, name)
+select u.id, 'farm', 'General farm'
+from auth.users u
+where not exists (
+  select 1 from cost_centers existing
+  where existing.user_id = u.id and existing.type = 'farm'
+);
+
+insert into budget_settings (user_id, enabled, monthly_amount)
+select u.id, false, 0
+from auth.users u
+on conflict (user_id) do nothing;

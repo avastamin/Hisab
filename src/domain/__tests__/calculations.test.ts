@@ -2,6 +2,7 @@ import {
   budgetProgress,
   cropCycleFinancials,
   expenseVsRevenueTotals,
+  farmSpendingByCategory,
   householdSpendingByCategory,
   monthlyCashFlow,
   totalsByCategory,
@@ -85,6 +86,13 @@ const generalCostCenter: CostCenter = {
   id: "cc-general",
   type: "general",
   name: "General household",
+  createdAt: "2026-01-01T00:00:00.000Z",
+};
+
+const farmCostCenter: CostCenter = {
+  id: "cc-farm",
+  type: "farm",
+  name: "General farm",
   createdAt: "2026-01-01T00:00:00.000Z",
 };
 
@@ -202,18 +210,32 @@ describe("cropCycleFinancials", () => {
 });
 
 describe("householdSpendingByCategory", () => {
-  it("only counts non-crop-cycle cost centers", () => {
-    const costCenters = [tomatoCostCenter, bikeCostCenter, generalCostCenter];
+  it("only counts general/vehicle/person cost centers — excludes crop cycles and general farm spend", () => {
+    const costCenters = [tomatoCostCenter, bikeCostCenter, generalCostCenter, farmCostCenter];
     const expenseEntries = [
       expense({ id: "e1", date: "2026-03-01", costCenterId: tomatoCostCenter.id, categoryId: fertilizer.id, amount: 1200 }),
       expense({ id: "e2", date: "2026-03-02", costCenterId: bikeCostCenter.id, categoryId: fuel.id, amount: 400 }),
       expense({ id: "e3", date: "2026-03-03", costCenterId: generalCostCenter.id, categoryId: groceries.id, amount: 2500 }),
+      expense({ id: "e4", date: "2026-03-04", costCenterId: farmCostCenter.id, categoryId: fertilizer.id, amount: 900 }),
     ];
     const result = householdSpendingByCategory(costCenters, expenseEntries, [], categories);
     expect(result).toEqual([
       { categoryId: groceries.id, categoryName: "Groceries", total: 2500 },
       { categoryId: fuel.id, categoryName: "Fuel", total: 400 },
     ]);
+  });
+});
+
+describe("farmSpendingByCategory", () => {
+  it("only counts general farm cost centers — excludes crop cycles and household spend", () => {
+    const costCenters = [tomatoCostCenter, bikeCostCenter, generalCostCenter, farmCostCenter];
+    const expenseEntries = [
+      expense({ id: "e1", date: "2026-03-01", costCenterId: tomatoCostCenter.id, categoryId: fertilizer.id, amount: 1200 }),
+      expense({ id: "e2", date: "2026-03-02", costCenterId: generalCostCenter.id, categoryId: groceries.id, amount: 2500 }),
+      expense({ id: "e3", date: "2026-03-03", costCenterId: farmCostCenter.id, categoryId: fertilizer.id, amount: 900 }),
+    ];
+    const result = farmSpendingByCategory(costCenters, expenseEntries, [], categories);
+    expect(result).toEqual([{ categoryId: fertilizer.id, categoryName: "Fertilizer", total: 900 }]);
   });
 });
 

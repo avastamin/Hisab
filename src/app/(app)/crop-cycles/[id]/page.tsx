@@ -5,9 +5,7 @@ import { cropCycleFinancials } from "@/domain/calculations";
 import { formatMoney } from "@/lib/format";
 import { Card } from "@/components/Card";
 import { PageHeader } from "@/components/PageHeader";
-import { updateCropCycleStatus } from "@/lib/actions/entries";
-
-const STATUSES = ["planned", "growing", "harvested", "closed"] as const;
+import { CropCycleStatusSelect } from "@/components/CropCycleStatusSelect";
 
 export default async function CropCycleDetailPage({ params }: PageProps<"/crop-cycles/[id]">) {
   const { id } = await params;
@@ -34,22 +32,7 @@ export default async function CropCycleDetailPage({ params }: PageProps<"/crop-c
           <p className="text-sm text-text-secondary">Planned harvest: {cycle.plannedHarvestDate}</p>
         ) : null}
 
-        <form action={updateCropCycleStatus} className="mt-3 flex items-center gap-2">
-          <input type="hidden" name="id" value={cycle.id} />
-          <span className="text-sm font-medium text-text-secondary">Status</span>
-          <select
-            name="status"
-            defaultValue={cycle.status}
-            onChange={(e) => e.currentTarget.form?.requestSubmit()}
-            className="rounded-lg border border-border bg-surface px-2 py-1.5 text-sm text-text-primary"
-          >
-            {STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {s[0].toUpperCase() + s.slice(1)}
-              </option>
-            ))}
-          </select>
-        </form>
+        <CropCycleStatusSelect id={cycle.id} status={cycle.status} />
       </Card>
 
       {financials ? (
