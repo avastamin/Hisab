@@ -3,10 +3,13 @@ import { addCategory, deleteCategory } from "@/lib/actions/settings";
 import { Card } from "@/components/Card";
 import { PageHeader } from "@/components/PageHeader";
 import { Field, TextInput, Select, SubmitButton } from "@/components/form/Field";
-import { Trash2 } from "lucide-react";
+import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 
 export default async function CategoriesPage() {
-  const { categories } = await getAppData();
+  const { categories, expenseEntries, laborEntries, saleEntries } = await getAppData();
+  // The database won't delete a category that entries still use, so only offer it for unused ones.
+  const entryCount = (id: string) =>
+    [...expenseEntries, ...laborEntries, ...saleEntries].filter((e) => e.categoryId === id).length;
 
   return (
     <div className="flex flex-col gap-4">
@@ -34,14 +37,13 @@ export default async function CategoriesPage() {
               <p className="font-medium text-text-primary">{c.name}</p>
               <p className="text-xs text-text-secondary">{c.kind === "cost" ? "Cost" : "Revenue"}{c.isBuiltIn ? " · built-in" : ""}</p>
             </div>
-            {!c.isBuiltIn ? (
-              <form action={deleteCategory}>
-                <input type="hidden" name="id" value={c.id} />
-                <button type="submit" className="p-1 text-text-secondary">
-                  <Trash2 size={18} />
-                </button>
-              </form>
-            ) : null}
+            {c.isBuiltIn ? null : entryCount(c.id) === 0 ? (
+              <ConfirmDeleteButton action={deleteCategory} id={c.id} label="category" message={`Delete the category "${c.name}"?`} compact />
+            ) : (
+              <span className="text-xs text-text-secondary">
+                {entryCount(c.id)} entr{entryCount(c.id) === 1 ? "y" : "ies"}
+              </span>
+            )}
           </Card>
         ))}
       </div>

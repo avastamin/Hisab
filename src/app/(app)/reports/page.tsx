@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getAppData } from "@/lib/data/queries";
 import { cropCycleFinancials, farmSpendingByCategory, householdSpendingByCategory } from "@/domain/calculations";
 import { currentMonthRange, formatMoney } from "@/lib/format";
@@ -11,7 +12,12 @@ export default async function ReportsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-bold text-text-primary">Reports</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold text-text-primary">Reports</h1>
+        <Link href="/entries" className="text-sm font-medium text-primary">
+          All entries →
+        </Link>
+      </div>
 
       <Card>
         <h2 className="mb-3 text-base font-semibold text-text-primary">Household spend by category (this month)</h2>

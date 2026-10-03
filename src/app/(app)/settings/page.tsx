@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { ChevronRight, Tags, Bookmark, Users, Car, Gauge, LogOut } from "lucide-react";
+import { ChevronRight, Sprout, Tags, Bookmark, Users, Car, Gauge, LogOut } from "lucide-react";
 import { Card } from "@/components/Card";
 import { signOut } from "@/lib/actions/auth";
 
 const ITEMS = [
+  { icon: Sprout, label: "Crops", href: "/settings/crops", description: "Rename or remove the crops you grow" },
   { icon: Tags, label: "Categories", href: "/settings/categories", description: "Manage cost and revenue categories" },
   { icon: Bookmark, label: "Tags", href: "/settings/tags", description: "Freeform labels for filtering entries" },
   { icon: Users, label: "Workers", href: "/settings/workers", description: "Day laborers you pay" },

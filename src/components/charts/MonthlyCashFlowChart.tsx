@@ -14,10 +14,11 @@ export function MonthlyCashFlowChart({ data }: { data: MonthlyCashFlow[] }) {
 
   return (
     <div>
-      <div className="flex items-end justify-between gap-3" style={{ height: 140 }}>
+      {/* Columns stretch to the full 140px so the bars' percentage heights have something to resolve against. */}
+      <div className="flex justify-between gap-3" style={{ height: 140 }}>
         {data.map((d) => (
           <div key={d.month} className="flex flex-1 flex-col items-center gap-1">
-            <div className="flex h-full w-full items-end justify-center gap-1">
+            <div className="flex min-h-0 w-full flex-1 items-end justify-center gap-1">
               <Bar value={d.totalRevenue} max={max} color={REVENUE_COLOR} label="Revenue" />
               <Bar value={d.totalExpense} max={max} color={EXPENSE_COLOR} label="Expense" />
             </div>

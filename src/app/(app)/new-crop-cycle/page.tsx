@@ -1,13 +1,15 @@
 import { getAppData } from "@/lib/data/queries";
 import { addCropCycle, addCrop } from "@/lib/actions/entries";
-import { UNIT_OPTIONS } from "@/lib/unitOptions";
-import { today } from "@/lib/format";
 import { Card } from "@/components/Card";
 import { PageHeader } from "@/components/PageHeader";
-import { Field, TextInput, Select, SubmitButton } from "@/components/form/Field";
+import { TextInput } from "@/components/form/Field";
+import { CropCycleForm } from "@/components/crops/CropCycleForm";
 
-export default async function NewCropCyclePage() {
+export default async function NewCropCyclePage({ searchParams }: PageProps<"/new-crop-cycle">) {
+  const { cropId } = await searchParams;
   const { crops } = await getAppData();
+  // Set by addCrop so the crop that was just added is already selected.
+  const newCropId = typeof cropId === "string" ? cropId : undefined;
 
   return (
     <div className="flex flex-col gap-5">
@@ -29,53 +31,7 @@ export default async function NewCropCyclePage() {
 
       {crops.length > 0 ? (
         <Card>
-          <form action={addCropCycle} className="flex flex-col gap-4">
-            <Field label="Crop">
-              <Select name="cropId" required defaultValue="">
-                <option value="" disabled>
-                  Choose…
-                </option>
-                {crops.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-
-            <Field label="Label" hint='Freeform, e.g. "Winter 2026"'>
-              <TextInput type="text" name="label" required />
-            </Field>
-
-            <Field label="Plot / area (optional)">
-              <TextInput type="text" name="plotOrArea" />
-            </Field>
-
-            <Field label="Start date">
-              <TextInput type="date" name="startDate" defaultValue={today()} required />
-            </Field>
-
-            <Field label="Planned harvest date (optional)">
-              <TextInput type="date" name="plannedHarvestDate" />
-            </Field>
-
-            <div className="flex gap-3">
-              <Field label="Expected yield (optional)">
-                <TextInput type="number" name="expectedYield" min="0" step="0.01" inputMode="decimal" />
-              </Field>
-              <Field label="Yield unit">
-                <Select name="yieldUnit" defaultValue="kg">
-                  {UNIT_OPTIONS.map((u) => (
-                    <option key={u} value={u}>
-                      {u}
-                    </option>
-                  ))}
-                </Select>
-              </Field>
-            </div>
-
-            <SubmitButton>Create Crop Cycle</SubmitButton>
-          </form>
+          <CropCycleForm key={newCropId} action={addCropCycle} crops={crops} defaultCropId={newCropId} submitLabel="Create Crop Cycle" />
         </Card>
       ) : null}
     </div>

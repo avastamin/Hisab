@@ -3,7 +3,7 @@ import { addTag, deleteTag } from "@/lib/actions/settings";
 import { Card } from "@/components/Card";
 import { PageHeader } from "@/components/PageHeader";
 import { Field, TextInput, SubmitButton } from "@/components/form/Field";
-import { Trash2 } from "lucide-react";
+import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 
 export default async function TagsPage() {
   const { tags } = await getAppData();
@@ -25,12 +25,7 @@ export default async function TagsPage() {
         {tags.map((t) => (
           <Card key={t.id} className="flex items-center justify-between py-3">
             <p className="font-medium text-text-primary">{t.name}</p>
-            <form action={deleteTag}>
-              <input type="hidden" name="id" value={t.id} />
-              <button type="submit" className="p-1 text-text-secondary">
-                <Trash2 size={18} />
-              </button>
-            </form>
+            <ConfirmDeleteButton action={deleteTag} id={t.id} label="tag" message={`Delete the tag "${t.name}"? It will no longer show on entries that use it.`} compact />
           </Card>
         ))}
       </div>

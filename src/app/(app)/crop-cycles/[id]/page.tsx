@@ -1,15 +1,17 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { Pencil } from "lucide-react";
 import { getAppData } from "@/lib/data/queries";
 import { cropCycleFinancials } from "@/domain/calculations";
 import { formatMoney } from "@/lib/format";
 import { Card } from "@/components/Card";
 import { PageHeader } from "@/components/PageHeader";
 import { CropCycleStatusSelect } from "@/components/CropCycleStatusSelect";
+import { EntryList, buildEntryItems } from "@/components/entries/EntryList";
 
 export default async function CropCycleDetailPage({ params }: PageProps<"/crop-cycles/[id]">) {
   const { id } = await params;
-  const { cropCycles, costCenters, categories, expenseEntries, laborEntries, saleEntries, crops } = await getAppData();
+  const { cropCycles, costCenters, categories, expenseEntries, laborEntries, saleEntries, crops, workers } = await getAppData();
 
   const cycle = cropCycles.find((c) => c.id === id);
   if (!cycle) notFound();
@@ -20,12 +22,30 @@ export default async function CropCycleDetailPage({ params }: PageProps<"/crop-c
     ? cropCycleFinancials(cycle, costCenter, expenseEntries, laborEntries, saleEntries, categories)
     : null;
 
+  const returnTo = encodeURIComponent(`/crop-cycles/${cycle.id}`);
+  const entries = buildEntryItems({
+    expenseEntries: expenseEntries.filter((e) => e.costCenterId === costCenter?.id),
+    laborEntries: laborEntries.filter((e) => e.costCenterId === costCenter?.id),
+    saleEntries: saleEntries.filter((e) => e.cropCycleId === cycle.id),
+    categories,
+    workers,
+    costCenters,
+    cropCycles,
+    returnTo: `/crop-cycles/${cycle.id}`,
+  });
+
   return (
     <div className="flex flex-col gap-4">
       <PageHeader title={cycle.label} backHref="/crop-cycles" />
 
       <Card>
-        <p className="text-sm text-text-secondary">{crop?.name ?? "Unknown crop"}</p>
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-sm text-text-secondary">{crop?.name ?? "Unknown crop"}</p>
+          <Link href={`/crop-cycles/${cycle.id}/edit`} className="flex items-center gap-1 text-sm font-medium text-primary">
+            <Pencil size={14} />
+            Edit
+          </Link>
+        </div>
         {cycle.plotOrArea ? <p className="text-sm text-text-secondary">Plot: {cycle.plotOrArea}</p> : null}
         <p className="text-sm text-text-secondary">Started {cycle.startDate}</p>
         {cycle.plannedHarvestDate ? (
@@ -64,11 +84,16 @@ export default async function CropCycleDetailPage({ params }: PageProps<"/crop-c
         </Card>
       ) : null}
 
+      <Card>
+        <h2 className="mb-1 text-base font-semibold text-text-primary">Entries</h2>
+        <EntryList entries={entries} emptyText="No expenses or sales yet." />
+      </Card>
+
       <div className="flex flex-col gap-2">
-        <Link href={`/add-expense?costCenterId=${costCenter?.id ?? ""}`} className="rounded-lg border border-border bg-surface-alt px-4 py-3 text-center font-semibold text-text-primary">
+        <Link href={`/add-expense?costCenterId=${costCenter?.id ?? ""}&returnTo=${returnTo}`} className="rounded-lg border border-border bg-surface-alt px-4 py-3 text-center font-semibold text-text-primary">
           Add Expense
         </Link>
-        <Link href="/add-sale" className="rounded-lg border border-border bg-surface-alt px-4 py-3 text-center font-semibold text-text-primary">
+        <Link href={`/add-sale?cropCycleId=${cycle.id}&returnTo=${returnTo}`} className="rounded-lg border border-border bg-surface-alt px-4 py-3 text-center font-semibold text-text-primary">
           Add Sale
         </Link>
       </div>

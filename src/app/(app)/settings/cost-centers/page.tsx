@@ -3,12 +3,14 @@ import { addCostCenter, deleteCostCenter } from "@/lib/actions/settings";
 import { Card } from "@/components/Card";
 import { PageHeader } from "@/components/PageHeader";
 import { Field, TextInput, Select, SubmitButton } from "@/components/form/Field";
-import { Trash2 } from "lucide-react";
+import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 
 const TYPE_LABEL: Record<string, string> = { vehicle: "Vehicle", person: "Person", general: "Household", farm: "Farm" };
 
 export default async function CostCentersPage() {
-  const { costCenters } = await getAppData();
+  const { costCenters, expenseEntries, laborEntries } = await getAppData();
+  const entryCount = (id: string) =>
+    expenseEntries.filter((e) => e.costCenterId === id).length + laborEntries.filter((e) => e.costCenterId === id).length;
   const nonCropCenters = costCenters.filter((c) => c.type !== "crop_cycle");
 
   return (
@@ -37,14 +39,22 @@ export default async function CostCentersPage() {
           <Card key={c.id} className="flex items-center justify-between py-3">
             <div>
               <p className="font-medium text-text-primary">{c.name}</p>
-              <p className="text-xs text-text-secondary">{TYPE_LABEL[c.type]}</p>
+              <p className="text-xs text-text-secondary">
+                {TYPE_LABEL[c.type]} · {entryCount(c.id)} entr{entryCount(c.id) === 1 ? "y" : "ies"}
+              </p>
             </div>
-            <form action={deleteCostCenter}>
-              <input type="hidden" name="id" value={c.id} />
-              <button type="submit" className="p-1 text-text-secondary">
-                <Trash2 size={18} />
-              </button>
-            </form>
+            {/* Deleting a cost center also deletes every expense recorded against it, so say how many. */}
+            <ConfirmDeleteButton
+              action={deleteCostCenter}
+              id={c.id}
+              label="cost center"
+              message={
+                entryCount(c.id) > 0
+                  ? `Delete "${c.name}" and its ${entryCount(c.id)} expense entries? This can't be undone.`
+                  : `Delete "${c.name}"?`
+              }
+              compact
+            />
           </Card>
         ))}
       </div>

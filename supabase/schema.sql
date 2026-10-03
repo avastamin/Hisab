@@ -209,7 +209,7 @@ begin
     (new.id, 'Pesticide', 'cost', true),
     (new.id, 'Herbicide', 'cost', true),
     (new.id, 'Fungicide', 'cost', true),
-    (new.id, 'Labor', 'cost', true),
+    (new.id, 'Labour', 'cost', true),
     (new.id, 'Irrigation', 'cost', true),
     (new.id, 'Equipment', 'cost', true),
     (new.id, 'Land Rent', 'cost', true),
@@ -269,6 +269,13 @@ create trigger on_auth_user_created
 -- added or renamed yourself.
 -- ---------------------------------------------------------------------------
 
+-- Spelling fix: the built-in "Labor" category is now "Labour". Rename it in place (before the backfill below,
+-- so the backfill doesn't add a second "Labour" next to the old one); existing entries keep pointing at it.
+update categories c
+set name = 'Labour'
+where c.name = 'Labor' and c.is_built_in
+  and not exists (select 1 from categories other where other.user_id = c.user_id and other.name = 'Labour');
+
 insert into categories (user_id, name, kind, is_built_in)
 select u.id, d.name, d.kind, true
 from auth.users u
@@ -280,7 +287,7 @@ cross join (values
   ('Pesticide', 'cost'),
   ('Herbicide', 'cost'),
   ('Fungicide', 'cost'),
-  ('Labor', 'cost'),
+  ('Labour', 'cost'),
   ('Irrigation', 'cost'),
   ('Equipment', 'cost'),
   ('Land Rent', 'cost'),

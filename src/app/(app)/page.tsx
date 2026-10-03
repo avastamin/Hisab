@@ -68,10 +68,13 @@ export default async function HomePage() {
             Add Expense
           </Link>
           <Link href="/add-labor" className="rounded-lg border border-border bg-surface-alt px-4 py-3 text-center font-semibold text-text-primary">
-            Add Labor
+            Add Labour
           </Link>
           <Link href="/add-sale" className="rounded-lg border border-border bg-surface-alt px-4 py-3 text-center font-semibold text-text-primary">
             Add Sale
+          </Link>
+          <Link href="/entries" className="pt-1 text-center text-sm font-medium text-primary">
+            See all entries →
           </Link>
         </div>
       </Card>

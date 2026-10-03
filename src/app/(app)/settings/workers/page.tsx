@@ -4,10 +4,12 @@ import { formatMoney } from "@/lib/format";
 import { Card } from "@/components/Card";
 import { PageHeader } from "@/components/PageHeader";
 import { Field, TextInput, SubmitButton } from "@/components/form/Field";
-import { Trash2 } from "lucide-react";
+import { ConfirmDeleteButton } from "@/components/ConfirmDeleteButton";
 
 export default async function WorkersPage() {
-  const { workers } = await getAppData();
+  const { workers, laborEntries } = await getAppData();
+  // The database won't delete a worker who has labour entries, so only offer it for workers who have none.
+  const entryCount = (id: string) => laborEntries.filter((e) => e.workerId === id).length;
 
   return (
     <div className="flex flex-col gap-4">
@@ -38,12 +40,13 @@ export default async function WorkersPage() {
                 {w.phone ? ` · ${w.phone}` : ""}
               </p>
             </div>
-            <form action={deleteWorker}>
-              <input type="hidden" name="id" value={w.id} />
-              <button type="submit" className="p-1 text-text-secondary">
-                <Trash2 size={18} />
-              </button>
-            </form>
+            {entryCount(w.id) === 0 ? (
+              <ConfirmDeleteButton action={deleteWorker} id={w.id} label="worker" message={`Delete ${w.name}?`} compact />
+            ) : (
+              <span className="text-xs text-text-secondary">
+                {entryCount(w.id)} labour entr{entryCount(w.id) === 1 ? "y" : "ies"}
+              </span>
+            )}
           </Card>
         ))}
       </div>
