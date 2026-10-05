@@ -3,8 +3,9 @@ import type { SelectOption } from "@/lib/costCenterOptions";
 import { UNIT_OPTIONS } from "@/lib/unitOptions";
 import { today } from "@/lib/format";
 import { Field, TextInput, Select, TextArea, SubmitButton } from "@/components/form/Field";
-import { ChooseSelect, HiddenFields, TagPicker, categoryOptions, type CommonProps } from "./FormParts";
+import { ChooseSelect, HiddenFields, TagPicker, categoryOptions, groupedTagOptions, type CommonProps } from "./FormParts";
 import { LiveTotal } from "./LiveTotal";
+import { isLabourCategory } from "@/lib/labour";
 
 // Labour and Sale forms, shared by the Add and Edit pages. When `entry` is given, the form is pre-filled and
 // carries the entry's id (plus `returnTo`, where the update action redirects afterwards) as hidden fields.
@@ -40,8 +41,12 @@ export function LaborForm({
         <ChooseSelect name="costCenterId" defaultValue={entry?.costCenterId} options={costOptions} />
       </Field>
 
-      <Field label="Category">
-        <ChooseSelect name="categoryId" defaultValue={entry?.categoryId} options={categoryOptions(categories)} />
+      <Field label="Tag">
+        <ChooseSelect
+          name="categoryId"
+          defaultValue={entry?.categoryId ?? categories.find((c) => isLabourCategory(c))?.id}
+          options={groupedTagOptions(categories)}
+        />
       </Field>
 
       <TagPicker tags={tags} selected={entry?.tagIds} />

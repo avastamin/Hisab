@@ -32,3 +32,27 @@ export function currentMonthRange(): { start: string; end: string } {
   const start = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
   return { start, end: today() };
 }
+
+/** "2026-10" shifted by `delta` months. */
+export function shiftMonth(month: string, delta: number): string {
+  const [year, m] = month.split("-").map(Number);
+  const d = new Date(year, m - 1 + delta, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+export function monthTitle(month: string): string {
+  const [year, m] = month.split("-").map(Number);
+  return new Date(year, m - 1, 1).toLocaleDateString(undefined, { month: "long", year: "numeric" });
+}
+
+/** A "YYYY-MM" from a URL search param, falling back to the current month. */
+export function monthFromParam(value: unknown): string {
+  return typeof value === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(value) ? value : today().slice(0, 7);
+}
+
+/** The first and last day of a "YYYY-MM" month, as an inclusive date range. */
+export function monthRange(month: string): { start: string; end: string } {
+  const [year, m] = month.split("-").map(Number);
+  const lastDay = new Date(year, m, 0).getDate();
+  return { start: `${month}-01`, end: `${month}-${String(lastDay).padStart(2, "0")}` };
+}

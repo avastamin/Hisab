@@ -2,7 +2,6 @@ import {
   budgetProgress,
   cropCycleFinancials,
   expenseVsRevenueTotals,
-  farmSpendingByCategory,
   householdSpendingByCategory,
   monthlyCashFlow,
   totalsByCategory,
@@ -223,19 +222,6 @@ describe("householdSpendingByCategory", () => {
       { categoryId: groceries.id, categoryName: "Groceries", total: 2500 },
       { categoryId: fuel.id, categoryName: "Fuel", total: 400 },
     ]);
-  });
-});
-
-describe("farmSpendingByCategory", () => {
-  it("only counts general farm cost centers — excludes crop cycles and household spend", () => {
-    const costCenters = [tomatoCostCenter, bikeCostCenter, generalCostCenter, farmCostCenter];
-    const expenseEntries = [
-      expense({ id: "e1", date: "2026-03-01", costCenterId: tomatoCostCenter.id, categoryId: fertilizer.id, amount: 1200 }),
-      expense({ id: "e2", date: "2026-03-02", costCenterId: generalCostCenter.id, categoryId: groceries.id, amount: 2500 }),
-      expense({ id: "e3", date: "2026-03-03", costCenterId: farmCostCenter.id, categoryId: fertilizer.id, amount: 900 }),
-    ];
-    const result = farmSpendingByCategory(costCenters, expenseEntries, [], categories);
-    expect(result).toEqual([{ categoryId: fertilizer.id, categoryName: "Fertilizer", total: 900 }]);
   });
 });
 

@@ -24,6 +24,9 @@ export type CropCycleStatus = "planned" | "growing" | "harvested" | "closed";
 
 export type CategoryKind = "cost" | "revenue";
 
+/** Top-level spending category. Each cost "category" row is really a tag under one of these (see domain/categoryGroups.ts). */
+export type CategoryGroup = "agro" | "household" | "other";
+
 export interface Crop {
   id: string;
   name: string;
@@ -51,6 +54,8 @@ export interface Category {
   id: string;
   name: string;
   kind: CategoryKind;
+  /** Which spending category this tag belongs to. Cost tags only; undefined for revenue categories. */
+  group?: CategoryGroup;
   color?: string;
   isBuiltIn: boolean;
   createdAt: ISODateTimeString;

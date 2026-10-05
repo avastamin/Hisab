@@ -1,5 +1,6 @@
 import type { Category, Tag } from "@/domain/types";
 import { Field, Select } from "@/components/form/Field";
+import { CATEGORY_GROUPS } from "@/domain/categoryGroups";
 
 // Building blocks shared by the entry forms (Add and Edit pages). No hooks here, so they work in both the
 // Server Component forms and the client-side ExpenseForm.
@@ -31,19 +32,30 @@ export function ChooseSelect({
 }: {
   name: string;
   defaultValue?: string;
-  options: { id: string; label: string }[];
+  options: { id: string; label: string; optgroup?: string }[];
   onChange?: (value: string) => void;
 }) {
+  // Options carrying an `optgroup` are shown under that heading, in the order the groups first appear.
+  const groups = [...new Set(options.map((o) => o.optgroup))];
+  const render = (list: typeof options) =>
+    list.map((o) => (
+      <option key={o.id} value={o.id}>
+        {o.label}
+      </option>
+    ));
+
   return (
     <Select name={name} required defaultValue={defaultValue ?? ""} onChange={onChange ? (e) => onChange(e.target.value) : undefined}>
       <option value="" disabled>
         Choose…
       </option>
-      {options.map((o) => (
-        <option key={o.id} value={o.id}>
-          {o.label}
-        </option>
-      ))}
+      {groups.length === 1 && groups[0] === undefined
+        ? render(options)
+        : groups.map((g) => (
+            <optgroup key={g ?? ""} label={g ?? ""}>
+              {render(options.filter((o) => o.optgroup === g))}
+            </optgroup>
+          ))}
     </Select>
   );
 }
@@ -51,7 +63,7 @@ export function ChooseSelect({
 export function TagPicker({ tags, selected = [] }: { tags: Tag[]; selected?: string[] }) {
   if (tags.length === 0) return null;
   return (
-    <Field label="Tags (optional)">
+    <Field label="Labels (optional)">
       <div className="flex flex-wrap gap-2">
         {tags.map((t) => (
           <label
@@ -74,3 +86,9 @@ export function TagPicker({ tags, selected = [] }: { tags: Tag[]; selected?: str
 }
 
 export const categoryOptions = (categories: Category[]) => categories.map((c) => ({ id: c.id, label: c.name }));
+
+/** Cost tags grouped under their category (Agro / Household / Other), for selects that list every tag at once. */
+export const groupedTagOptions = (categories: Category[]) =>
+  CATEGORY_GROUPS.flatMap(({ id, label }) =>
+    categories.filter((c) => c.group === id).map((c) => ({ id: c.id, label: c.name, optgroup: label })),
+  );

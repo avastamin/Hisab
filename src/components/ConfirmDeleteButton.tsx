@@ -1,6 +1,7 @@
 "use client";
 
 import { Trash2 } from "lucide-react";
+import { showToast } from "@/components/Toaster";
 
 // Client Component so it can ask for confirmation before the delete action runs. `compact` renders just the bin
 // icon, for rows in a settings list.
@@ -23,7 +24,10 @@ export function ConfirmDeleteButton({
     <form
       action={action}
       onSubmit={(e) => {
-        if (!window.confirm(message ?? `Delete this ${label}? This can't be undone.`)) e.preventDefault();
+        if (!window.confirm(message ?? `Delete this ${label}? This can't be undone.`)) {
+          e.preventDefault();
+          showToast("info", "Nothing was deleted");
+        }
       }}
     >
       <input type="hidden" name="id" value={id} />

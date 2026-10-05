@@ -10,14 +10,18 @@ export default async function TagsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <PageHeader title="Tags" backHref="/settings" />
+      <PageHeader title="Labels" backHref="/settings" />
+      <p className="-mt-2 text-sm text-text-secondary">
+        Optional extras you can add to any entry, on top of its tag, e.g. Organic or Wholesale. Reports show spending
+        per label.
+      </p>
 
       <Card>
         <form action={addTag} className="flex flex-col gap-3">
           <Field label="Name">
             <TextInput type="text" name="name" required />
           </Field>
-          <SubmitButton>Add Tag</SubmitButton>
+          <SubmitButton>Add Label</SubmitButton>
         </form>
       </Card>
 
@@ -25,7 +29,7 @@ export default async function TagsPage() {
         {tags.map((t) => (
           <Card key={t.id} className="flex items-center justify-between py-3">
             <p className="font-medium text-text-primary">{t.name}</p>
-            <ConfirmDeleteButton action={deleteTag} id={t.id} label="tag" message={`Delete the tag "${t.name}"? It will no longer show on entries that use it.`} compact />
+            <ConfirmDeleteButton action={deleteTag} id={t.id} label="label" message={`Delete the label "${t.name}"? It will no longer show on entries that use it.`} compact />
           </Card>
         ))}
       </div>

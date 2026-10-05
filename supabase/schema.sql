@@ -38,10 +38,18 @@ create table if not exists categories (
   user_id uuid not null references auth.users (id) on delete cascade,
   name text not null,
   kind text not null check (kind in ('cost', 'revenue')),
+  -- Cost tags sit under one of three spending categories; null for revenue categories.
+  category_group text check (category_group is null or category_group in ('agro', 'household', 'other')),
   color text,
   is_built_in boolean not null default false,
   created_at timestamptz not null default now()
 );
+
+-- For a database created before category_group existed (create table if not exists above is then a no-op).
+alter table categories add column if not exists category_group text;
+alter table categories drop constraint if exists categories_category_group_check;
+alter table categories add constraint categories_category_group_check
+  check (category_group is null or category_group in ('agro', 'household', 'other'));
 
 create table if not exists tags (
   id uuid primary key default gen_random_uuid(),
@@ -200,38 +208,42 @@ language plpgsql
 security definer set search_path = public
 as $$
 begin
-  insert into categories (user_id, name, kind, is_built_in) values
-    -- Agro / farm
-    (new.id, 'Organic Fertilizer', 'cost', true),
-    (new.id, 'Chemical Fertilizer', 'cost', true),
-    (new.id, 'Fertilizer', 'cost', true),
-    (new.id, 'Seeds', 'cost', true),
-    (new.id, 'Pesticide', 'cost', true),
-    (new.id, 'Herbicide', 'cost', true),
-    (new.id, 'Fungicide', 'cost', true),
-    (new.id, 'Labour', 'cost', true),
-    (new.id, 'Irrigation', 'cost', true),
-    (new.id, 'Equipment', 'cost', true),
-    (new.id, 'Land Rent', 'cost', true),
-    (new.id, 'Nursery / Saplings', 'cost', true),
-    (new.id, 'Transport', 'cost', true),
-    -- Family / household
-    (new.id, 'Groceries', 'cost', true),
-    (new.id, 'Fish', 'cost', true),
-    (new.id, 'Meat', 'cost', true),
-    (new.id, 'Vegetables', 'cost', true),
-    (new.id, 'Dairy & Eggs', 'cost', true),
-    (new.id, 'Processed Foods', 'cost', true),
-    (new.id, 'Medicine', 'cost', true),
-    (new.id, 'Education', 'cost', true),
-    (new.id, 'Fuel', 'cost', true),
-    (new.id, 'Utilities', 'cost', true),
-    (new.id, 'House Rent', 'cost', true),
-    (new.id, 'Clothing', 'cost', true),
-    (new.id, 'Other', 'cost', true),
-    -- Revenue
-    (new.id, 'Harvest Sale', 'revenue', true),
-    (new.id, 'Other Income', 'revenue', true);
+  insert into categories (user_id, name, kind, category_group, is_built_in) values
+    (new.id, 'Labour', 'cost', 'agro', true),
+    (new.id, 'Seeds', 'cost', 'agro', true),
+    (new.id, 'Nursery / Saplings', 'cost', 'agro', true),
+    (new.id, 'Chemical Fertilizer', 'cost', 'agro', true),
+    (new.id, 'Organic Fertilizer', 'cost', 'agro', true),
+    (new.id, 'Cowdung', 'cost', 'agro', true),
+    (new.id, 'Pesticide', 'cost', 'agro', true),
+    (new.id, 'Herbicide', 'cost', 'agro', true),
+    (new.id, 'Fungicide', 'cost', 'agro', true),
+    (new.id, 'Irrigation', 'cost', 'agro', true),
+    (new.id, 'Equipment / Tools', 'cost', 'agro', true),
+    (new.id, 'Land Rent', 'cost', 'agro', true),
+    (new.id, 'Transport', 'cost', 'agro', true),
+    (new.id, 'Other (Agro)', 'cost', 'agro', true),
+    (new.id, 'Groceries', 'cost', 'household', true),
+    (new.id, 'Fish', 'cost', 'household', true),
+    (new.id, 'Meat', 'cost', 'household', true),
+    (new.id, 'Vegetables', 'cost', 'household', true),
+    (new.id, 'Dairy & Eggs', 'cost', 'household', true),
+    (new.id, 'Processed Foods', 'cost', 'household', true),
+    (new.id, 'Medicine', 'cost', 'household', true),
+    (new.id, 'Education', 'cost', 'household', true),
+    (new.id, 'Utilities', 'cost', 'household', true),
+    (new.id, 'House Rent', 'cost', 'household', true),
+    (new.id, 'Clothing', 'cost', 'household', true),
+    (new.id, 'Fuel', 'cost', 'household', true),
+    (new.id, 'Mobile / Internet', 'cost', 'household', true),
+    (new.id, 'Other (Household)', 'cost', 'household', true),
+    (new.id, 'Loan Repayment', 'cost', 'other', true),
+    (new.id, 'Zakat / Donation', 'cost', 'other', true),
+    (new.id, 'Gifts', 'cost', 'other', true),
+    (new.id, 'Travel', 'cost', 'other', true),
+    (new.id, 'Other', 'cost', 'other', true),
+    (new.id, 'Harvest Sale', 'revenue', null, true),
+    (new.id, 'Other Income', 'revenue', null, true);
 
   insert into tags (user_id, name) values
     (new.id, 'Organic'),
@@ -269,49 +281,87 @@ create trigger on_auth_user_created
 -- added or renamed yourself.
 -- ---------------------------------------------------------------------------
 
--- Spelling fix: the built-in "Labor" category is now "Labour". Rename it in place (before the backfill below,
--- so the backfill doesn't add a second "Labour" next to the old one); existing entries keep pointing at it.
+-- Spelling fix: the built-in "Labor" category is now "Labour". Renamed in place, so existing entries keep pointing at it.
 update categories c
 set name = 'Labour'
 where c.name = 'Labor' and c.is_built_in
   and not exists (select 1 from categories other where other.user_id = c.user_id and other.name = 'Labour');
 
-insert into categories (user_id, name, kind, is_built_in)
-select u.id, d.name, d.kind, true
+-- Merge self-made near-duplicates of a built-in one (e.g. "Pesticides" next to built-in "Pesticide"): move their
+-- entries over, then remove the duplicate. Only merges into built-ins, so two of your own are never merged.
+drop table if exists category_merge;
+create temp table category_merge as
+select distinct on (dup.id) dup.id as dup_id, keep.id as keep_id
+from categories dup
+join categories keep
+  on keep.user_id = dup.user_id and keep.kind = dup.kind and keep.is_built_in and not dup.is_built_in
+ and regexp_replace(lower(trim(dup.name)), 's$', '') = regexp_replace(lower(trim(keep.name)), 's$', '');
+
+update expense_entries e set category_id = m.keep_id from category_merge m where e.category_id = m.dup_id;
+update labor_entries e set category_id = m.keep_id from category_merge m where e.category_id = m.dup_id;
+update sale_entries e set category_id = m.keep_id from category_merge m where e.category_id = m.dup_id;
+delete from categories c using category_merge m where c.id = m.dup_id;
+drop table category_merge;
+
+-- Put every existing cost tag under Agro, Household or Other. Must stay in step with inferCategoryGroup() in
+-- src/domain/categoryGroups.ts. Anything unrecognised goes to Other; move it in Settings -> Categories.
+update categories
+set category_group = case
+  when lower(trim(name)) in ('labour', 'labor', 'seeds', 'seed', 'nursery / saplings', 'saplings', 'fertilizer', 'chemical fertilizer', 'organic fertilizer', 'cowdung', 'pesticide', 'pesticides', 'herbicide', 'fungicide', 'irrigation', 'equipment', 'equipment / tools', 'land rent', 'transport') then 'agro'
+  when lower(trim(name)) in ('groceries', 'fish', 'meat', 'vegetables', 'dairy & eggs', 'processed foods', 'medicine', 'education', 'fuel', 'utilities', 'house rent', 'clothing', 'mobile / internet') then 'household'
+  else 'other'
+end
+where kind = 'cost' and category_group is null;
+
+-- The old catch-all "Other" belongs to the Other category; "Equipment" is now "Equipment / Tools".
+update categories c set name = 'Equipment / Tools'
+where c.name = 'Equipment' and c.is_built_in
+  and not exists (select 1 from categories other where other.user_id = c.user_id and other.name = 'Equipment / Tools');
+
+-- Add any default tags a user doesn't have yet (matched by name, ignoring case), without touching their own.
+insert into categories (user_id, name, kind, category_group, is_built_in)
+select u.id, d.name, d.kind, d.category_group, true
 from auth.users u
 cross join (values
-  ('Organic Fertilizer', 'cost'),
-  ('Chemical Fertilizer', 'cost'),
-  ('Fertilizer', 'cost'),
-  ('Seeds', 'cost'),
-  ('Pesticide', 'cost'),
-  ('Herbicide', 'cost'),
-  ('Fungicide', 'cost'),
-  ('Labour', 'cost'),
-  ('Irrigation', 'cost'),
-  ('Equipment', 'cost'),
-  ('Land Rent', 'cost'),
-  ('Nursery / Saplings', 'cost'),
-  ('Transport', 'cost'),
-  ('Groceries', 'cost'),
-  ('Fish', 'cost'),
-  ('Meat', 'cost'),
-  ('Vegetables', 'cost'),
-  ('Dairy & Eggs', 'cost'),
-  ('Processed Foods', 'cost'),
-  ('Medicine', 'cost'),
-  ('Education', 'cost'),
-  ('Fuel', 'cost'),
-  ('Utilities', 'cost'),
-  ('House Rent', 'cost'),
-  ('Clothing', 'cost'),
-  ('Other', 'cost'),
-  ('Harvest Sale', 'revenue'),
-  ('Other Income', 'revenue')
-) as d(name, kind)
+  ('Labour', 'cost', 'agro'),
+  ('Seeds', 'cost', 'agro'),
+  ('Nursery / Saplings', 'cost', 'agro'),
+  ('Chemical Fertilizer', 'cost', 'agro'),
+  ('Organic Fertilizer', 'cost', 'agro'),
+  ('Cowdung', 'cost', 'agro'),
+  ('Pesticide', 'cost', 'agro'),
+  ('Herbicide', 'cost', 'agro'),
+  ('Fungicide', 'cost', 'agro'),
+  ('Irrigation', 'cost', 'agro'),
+  ('Equipment / Tools', 'cost', 'agro'),
+  ('Land Rent', 'cost', 'agro'),
+  ('Transport', 'cost', 'agro'),
+  ('Other (Agro)', 'cost', 'agro'),
+  ('Groceries', 'cost', 'household'),
+  ('Fish', 'cost', 'household'),
+  ('Meat', 'cost', 'household'),
+  ('Vegetables', 'cost', 'household'),
+  ('Dairy & Eggs', 'cost', 'household'),
+  ('Processed Foods', 'cost', 'household'),
+  ('Medicine', 'cost', 'household'),
+  ('Education', 'cost', 'household'),
+  ('Utilities', 'cost', 'household'),
+  ('House Rent', 'cost', 'household'),
+  ('Clothing', 'cost', 'household'),
+  ('Fuel', 'cost', 'household'),
+  ('Mobile / Internet', 'cost', 'household'),
+  ('Other (Household)', 'cost', 'household'),
+  ('Loan Repayment', 'cost', 'other'),
+  ('Zakat / Donation', 'cost', 'other'),
+  ('Gifts', 'cost', 'other'),
+  ('Travel', 'cost', 'other'),
+  ('Other', 'cost', 'other'),
+  ('Harvest Sale', 'revenue', null),
+  ('Other Income', 'revenue', null)
+) as d(name, kind, category_group)
 where not exists (
   select 1 from categories existing
-  where existing.user_id = u.id and existing.name = d.name
+  where existing.user_id = u.id and lower(existing.name) = lower(d.name) and existing.kind = d.kind
 );
 
 insert into tags (user_id, name)

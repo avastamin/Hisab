@@ -5,8 +5,8 @@ import { signOut } from "@/lib/actions/auth";
 
 const ITEMS = [
   { icon: Sprout, label: "Crops", href: "/settings/crops", description: "Rename or remove the crops you grow" },
-  { icon: Tags, label: "Categories", href: "/settings/categories", description: "Manage cost and revenue categories" },
-  { icon: Bookmark, label: "Tags", href: "/settings/tags", description: "Freeform labels for filtering entries" },
+  { icon: Tags, label: "Categories & tags", href: "/settings/categories", description: "Agro, Household and Other, and the tags under each" },
+  { icon: Bookmark, label: "Labels", href: "/settings/tags", description: "Optional extras like Organic or Wholesale" },
   { icon: Users, label: "Workers", href: "/settings/workers", description: "Day laborers you pay" },
   { icon: Car, label: "Vehicles & other cost centers", href: "/settings/cost-centers", description: "Bikes, family members, and other household spending targets" },
   { icon: Gauge, label: "Monthly Budget", href: "/settings/budget", description: "Optional: set a household spending goal and track progress" },

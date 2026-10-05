@@ -12,6 +12,7 @@ import type {
   Worker,
   BudgetSettings,
 } from "@/domain/types";
+import { inferCategoryGroup } from "@/domain/categoryGroups";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -35,6 +36,8 @@ export const mapCategory = (r: any): Category => ({
   id: r.id,
   name: r.name,
   kind: r.kind,
+  // Falls back to a name-based guess so the app keeps working before the category_groups migration has run.
+  group: r.kind === "cost" ? (r.category_group ?? inferCategoryGroup(r.name)) : undefined,
   color: r.color ?? undefined,
   isBuiltIn: r.is_built_in,
   createdAt: r.created_at,

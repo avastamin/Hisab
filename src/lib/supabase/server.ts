@@ -1,5 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
+import { createResilientFetch } from "./resilientFetch";
 import { cookies } from "next/headers";
+
+// One per module: it holds no per-request state.
+const resilientFetch = createResilientFetch();
 
 /**
  * Supabase client for use in Server Components, Server Actions, and Route Handlers.
@@ -12,6 +16,7 @@ export async function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      global: { fetch: resilientFetch },
       cookies: {
         getAll() {
           return cookieStore.getAll();

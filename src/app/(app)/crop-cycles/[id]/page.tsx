@@ -52,7 +52,7 @@ export default async function CropCycleDetailPage({ params }: PageProps<"/crop-c
           <p className="text-sm text-text-secondary">Planned harvest: {cycle.plannedHarvestDate}</p>
         ) : null}
 
-        <CropCycleStatusSelect id={cycle.id} status={cycle.status} />
+        <CropCycleStatusSelect key={cycle.status} id={cycle.id} status={cycle.status} />
       </Card>
 
       {financials ? (
@@ -75,7 +75,7 @@ export default async function CropCycleDetailPage({ params }: PageProps<"/crop-c
 
           {financials.costByCategory.length > 0 ? (
             <div className="mt-3 border-t border-border pt-3">
-              <p className="mb-2 text-sm font-medium text-text-secondary">Cost by category</p>
+              <p className="mb-2 text-sm font-medium text-text-secondary">Cost by tag</p>
               {financials.costByCategory.map((c) => (
                 <Row key={c.categoryId} label={c.categoryName} value={formatMoney(c.total)} />
               ))}

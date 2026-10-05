@@ -161,18 +161,6 @@ export function householdSpendingByCategory(
   return totalsByCategory(entries, categories);
 }
 
-/** General farm/agro spending not yet tied to a specific crop cycle (e.g. bulk fertilizer) — "farm" cost centers only. */
-export function farmSpendingByCategory(
-  costCenters: readonly CostCenter[],
-  expenseEntries: readonly ExpenseEntry[],
-  laborEntries: readonly LaborEntry[],
-  categories: readonly Category[],
-  range?: DateRange,
-): CategoryTotal[] {
-  const entries = entriesForCostCenterTypes(["farm"], costCenters, expenseEntries, laborEntries, range);
-  return totalsByCategory(entries, categories);
-}
-
 export interface ExpenseVsRevenueTotals {
   totalExpense: number;
   totalRevenue: number;
