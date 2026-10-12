@@ -1,25 +1,15 @@
 import Link from "next/link";
 import { getAppData } from "@/lib/data/queries";
 import { cropCycleFinancials, householdSpendingByCategory, monthlyCashFlow } from "@/domain/calculations";
-import { currentMonthRange } from "@/lib/format";
-import { formatMoney } from "@/lib/format";
+import { CHART_RANGES, chartRangeFromParam, currentMonthRange, formatMoney, lastMonths, monthSpan } from "@/lib/format";
 import { Card } from "@/components/Card";
 import { StatTile } from "@/components/StatTile";
 import { ExpenseRevenueDonut } from "@/components/charts/ExpenseRevenueDonut";
 import { MonthlyCashFlowChart } from "@/components/charts/MonthlyCashFlowChart";
 import { BudgetProgressBar } from "@/components/BudgetProgressBar";
 
-function lastMonths(count: number): string[] {
-  const now = new Date();
-  const months: string[] = [];
-  for (let i = count - 1; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
-  }
-  return months;
-}
-
-export default async function HomePage() {
+export default async function HomePage({ searchParams }: PageProps<"/">) {
+  const range = chartRangeFromParam((await searchParams).range);
   const { cropCycles, costCenters, categories, expenseEntries, laborEntries, saleEntries, budgetSettings } =
     await getAppData();
 
@@ -28,7 +18,7 @@ export default async function HomePage() {
   const monthTotals = householdSpendingByCategory(costCenters, expenseEntries, laborEntries, categories, currentMonthRange());
   const monthSpending = monthTotals.reduce((sum, t) => sum + t.total, 0);
 
-  const months = lastMonths(6);
+  const months = lastMonths(range);
   const cashFlow = monthlyCashFlow(expenseEntries, laborEntries, saleEntries, months);
   const overallTotals = cashFlow.reduce(
     (acc, m) => ({ totalExpense: acc.totalExpense + m.totalExpense, totalRevenue: acc.totalRevenue + m.totalRevenue }),
@@ -51,14 +41,36 @@ export default async function HomePage() {
         </Card>
       ) : null}
 
+      {/* One range control above both charts, so their numbers always cover the same months. */}
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs text-text-secondary">{monthSpan(months)}</p>
+        <nav aria-label="Chart range" className="flex rounded-lg border border-border bg-surface p-0.5">
+          {CHART_RANGES.map((r) => (
+            <Link
+              key={r}
+              href={r === 12 ? "/" : `/?range=${r}`}
+              scroll={false}
+              aria-current={r === range ? "page" : undefined}
+              className={
+                r === range
+                  ? "rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-primary-text"
+                  : "rounded-md px-2.5 py-1 text-xs font-medium text-text-secondary"
+              }
+            >
+              {r} months
+            </Link>
+          ))}
+        </nav>
+      </div>
+
       <Card>
-        <h2 className="mb-3 text-base font-semibold text-text-primary">Expense vs Revenue (last 6 months)</h2>
+        <h2 className="mb-3 text-base font-semibold text-text-primary">Expense vs Revenue (last {range} months)</h2>
         <ExpenseRevenueDonut totalExpense={overallTotals.totalExpense} totalRevenue={overallTotals.totalRevenue} />
       </Card>
 
       <Card>
         <h2 className="mb-3 text-base font-semibold text-text-primary">Monthly Cash Flow</h2>
-        <MonthlyCashFlowChart data={cashFlow} />
+        <MonthlyCashFlowChart key={range} data={cashFlow} />
       </Card>
 
       <Card>
