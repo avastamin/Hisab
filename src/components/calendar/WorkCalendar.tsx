@@ -53,6 +53,8 @@ export function WorkCalendar({
       <FullCalendar
         plugins={[dayGridPlugin, interactionPlugin]}
         initialView="dayGridMonth"
+        // Saturday, the start of the working week in Bangladesh.
+        firstDay={6}
         initialDate={initialDate}
         headerToolbar={{ left: "prev,next", center: "title", right: "today" }}
         height="auto"
