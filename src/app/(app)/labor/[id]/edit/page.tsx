@@ -3,6 +3,7 @@ import { getAppData } from "@/lib/data/queries";
 import { updateLabor, deleteLabor } from "@/lib/actions/entries";
 import { costCenterOptions } from "@/lib/costCenterOptions";
 import { safeReturnTo } from "@/lib/returnTo";
+import { otherWorkDays } from "@/lib/workDates";
 import { Card } from "@/components/Card";
 import { PageHeader } from "@/components/PageHeader";
 import { LaborForm } from "@/components/entries/EntryForms";
@@ -17,7 +18,7 @@ export default async function EditLaborPage({ params, searchParams }: PageProps<
   if (!entry) notFound();
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
       <PageHeader title="Edit Labour" backHref={returnTo} />
       <Card>
         <LaborForm
@@ -26,6 +27,7 @@ export default async function EditLaborPage({ params, searchParams }: PageProps<
           tags={tags}
           costOptions={costCenterOptions(costCenters, cropCycles)}
           workers={workers}
+          otherWorkDays={otherWorkDays(laborEntries, entry.id)}
           entry={entry}
           returnTo={returnTo}
           submitLabel="Save Changes"

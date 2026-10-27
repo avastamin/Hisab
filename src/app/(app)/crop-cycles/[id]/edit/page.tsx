@@ -25,7 +25,7 @@ export default async function EditCropCyclePage({ params }: PageProps<"/crop-cyc
       : `Delete "${cycle.label}"? This can't be undone.`;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
       <PageHeader title="Edit Crop Cycle" backHref={`/crop-cycles/${cycle.id}`} />
       <Card>
         <CropCycleForm action={updateCropCycle} crops={crops} cycle={cycle} submitLabel="Save Changes" />

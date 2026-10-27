@@ -16,7 +16,7 @@ export default async function EditSalePage({ params, searchParams }: PageProps<"
   if (!entry) notFound();
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
       <PageHeader title="Edit Sale" backHref={returnTo} />
       <Card>
         <SaleForm

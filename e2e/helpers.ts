@@ -25,5 +25,6 @@ export async function expectToast(page: Page, type: "success" | "error" | "warni
 
 /** Picks an <option> by its visible text, for selects whose values are database ids. */
 export async function selectByLabel(page: Page, name: string | RegExp, option: string) {
-  await page.getByLabel(name, { exact: typeof name === "string" }).selectOption({ label: option });
+  // By role, not getByLabel: a <label> wrapping a <select> also contains its option text, so exact label text never matches.
+  await page.getByRole("combobox", { name, exact: typeof name === "string" }).selectOption({ label: option });
 }

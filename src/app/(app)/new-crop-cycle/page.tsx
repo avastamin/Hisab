@@ -12,7 +12,7 @@ export default async function NewCropCyclePage({ searchParams }: PageProps<"/new
   const newCropId = typeof cropId === "string" ? cropId : undefined;
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-5">
       <PageHeader title="New Crop Cycle" backHref="/crop-cycles" />
 
       <Card>

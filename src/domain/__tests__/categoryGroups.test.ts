@@ -38,6 +38,7 @@ const labourEntry = (id: string, amount: number, tagIds: string[] = []): LaborEn
   workerId: "w1",
   daysWorked: 2,
   dailyRate: amount / 2,
+  workDates: [],
   amount,
   createdAt: at,
 });

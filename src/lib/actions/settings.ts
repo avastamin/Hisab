@@ -7,6 +7,7 @@ import { flash } from "@/lib/flash";
 import { friendlyDbError } from "@/lib/dbErrors";
 import { CATEGORY_GROUPS, categoryGroupLabel } from "@/domain/categoryGroups";
 import type { CategoryGroup } from "@/domain/types";
+import { nextWorkerColor, parseWorkerColor } from "@/lib/workerColors";
 
 async function requireUser() {
   const supabase = await createClient();
@@ -148,15 +149,27 @@ export async function addWorker(formData: FormData) {
   const rateRaw = String(formData.get("defaultDailyRate") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
 
+  // A new worker gets a colour nobody else has, so they stand out on the calendars straight away.
+  const { data: existing } = await supabase.from("workers").select("id, color");
   const { error } = await supabase.from("workers").insert({
     user_id: user.id,
     name,
     default_daily_rate: rateRaw ? Number(rateRaw) : null,
     phone: phone || null,
+    color: parseWorkerColor(formData.get("color")) ?? nextWorkerColor(existing ?? []),
   });
   if (await failed(error, `add ${name}`)) return;
 
   await flash("success", `${name} added`);
+  revalidatePath("/", "layout");
+}
+
+export async function updateWorkerColor(formData: FormData) {
+  const { supabase } = await requireUser();
+  const color = parseWorkerColor(formData.get("color"));
+  if (!color) return;
+  const { error } = await supabase.from("workers").update({ color }).eq("id", String(formData.get("id")));
+  if (await failed(error, "change the colour")) return;
   revalidatePath("/", "layout");
 }
 

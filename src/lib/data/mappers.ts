@@ -58,6 +58,7 @@ export const mapWorker = (r: any): Worker => ({
   name: r.name,
   defaultDailyRate: r.default_daily_rate ?? undefined,
   phone: r.phone ?? undefined,
+  color: r.color ?? undefined,
   createdAt: r.created_at,
 });
 
@@ -84,6 +85,8 @@ export const mapLaborEntry = (r: any): LaborEntry => ({
   workerId: r.worker_id,
   daysWorked: Number(r.days_worked),
   dailyRate: Number(r.daily_rate),
+  // Missing before the work_dates migration has run.
+  workDates: [...(r.work_dates ?? [])].sort(),
   amount: Number(r.amount),
   createdAt: r.created_at,
 });

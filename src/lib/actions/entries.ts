@@ -7,6 +7,7 @@ import { laborEntryAmount, saleEntryAmount } from "@/domain/money";
 import { safeReturnTo } from "@/lib/returnTo";
 import { flash } from "@/lib/flash";
 import { friendlyDbError } from "@/lib/dbErrors";
+import { parseWorkDates } from "@/lib/workDates";
 
 function getTagIds(formData: FormData): string[] {
   return formData.getAll("tagIds").map(String).filter(Boolean);
@@ -51,20 +52,40 @@ function expenseRow(formData: FormData) {
   };
 }
 
-function laborRow(formData: FormData) {
-  const daysWorked = Number(formData.get("daysWorked"));
-  const dailyRate = Number(formData.get("dailyRate"));
-  return {
-    date: String(formData.get("date")),
-    cost_center_id: String(formData.get("costCenterId")),
-    category_id: String(formData.get("categoryId")),
-    tag_ids: getTagIds(formData),
-    worker_id: String(formData.get("workerId")),
-    days_worked: daysWorked,
-    daily_rate: dailyRate,
-    amount: laborEntryAmount(daysWorked, dailyRate),
-    note: String(formData.get("note") ?? "").trim() || null,
-  };
+// The labour form can list several workers. Each one's workerId / daysWorked / dailyRate / workDates fields come
+// in the same order, and each becomes its own labour entry sharing the date, cost center, tag, labels and note.
+function laborRows(formData: FormData) {
+  const field = (name: string) => formData.getAll(name).map(String);
+  const [days, rates, workDates] = [field("daysWorked"), field("dailyRate"), field("workDates")];
+  return field("workerId").map((workerId, i) => {
+    const daysWorked = Number(days[i]);
+    const dailyRate = Number(rates[i]);
+    return {
+      date: String(formData.get("date")),
+      cost_center_id: String(formData.get("costCenterId")),
+      category_id: String(formData.get("categoryId")),
+      tag_ids: getTagIds(formData),
+      worker_id: workerId,
+      days_worked: daysWorked,
+      daily_rate: dailyRate,
+      work_dates: parseWorkDates(workDates[i]),
+      amount: laborEntryAmount(daysWorked, dailyRate),
+      note: String(formData.get("note") ?? "").trim() || null,
+    };
+  });
+}
+
+/** For updating one labour entry, whose form only ever has one worker. */
+const laborRow = (formData: FormData) => laborRows(formData)[0];
+
+const labourSaved = (count: number) => (count === 1 ? "Labour entry saved" : `${count} labour entries saved`);
+
+async function insertLabour(formData: FormData): Promise<number | null> {
+  const { supabase, user } = await requireUser();
+  const rows = laborRows(formData).map((row) => ({ user_id: user.id, ...row }));
+  const { error } = await supabase.from("labor_entries").insert(rows);
+  if (await failed(error, "save the labour entry")) return null;
+  return rows.length;
 }
 
 function saleRow(formData: FormData) {
@@ -89,9 +110,9 @@ export async function addExpense(formData: FormData) {
 
   // Picking the Labour tag on the expense form adds a worker, which makes it a labour entry.
   if (hasWorker(formData)) {
-    const { error } = await supabase.from("labor_entries").insert({ user_id: user.id, ...laborRow(formData) });
-    if (await failed(error, "save the labour entry")) return;
-    await flash("success", "Labour entry saved");
+    const count = await insertLabour(formData);
+    if (count === null) return;
+    await flash("success", labourSaved(count));
   } else {
     const { error } = await supabase.from("expense_entries").insert({ user_id: user.id, ...expenseRow(formData) });
     if (await failed(error, "save the expense")) return;
@@ -101,10 +122,9 @@ export async function addExpense(formData: FormData) {
 }
 
 export async function addLabor(formData: FormData) {
-  const { supabase, user } = await requireUser();
-  const { error } = await supabase.from("labor_entries").insert({ user_id: user.id, ...laborRow(formData) });
-  if (await failed(error, "save the labour entry")) return;
-  await flash("success", "Labour entry saved");
+  const count = await insertLabour(formData);
+  if (count === null) return;
+  await flash("success", labourSaved(count));
   done(formData);
 }
 
@@ -146,11 +166,10 @@ async function deleteEntry(kind: EntryKind, formData: FormData) {
 export async function updateExpense(formData: FormData) {
   if (!hasWorker(formData)) return updateEntry("expense", formData);
 
-  // A worker was added to a Labour expense: move it to labor_entries. Insert first, so a failed delete can only
-  // leave a duplicate to remove by hand, never lose the entry.
-  const { supabase, user } = await requireUser();
-  const { error: insertError } = await supabase.from("labor_entries").insert({ user_id: user.id, ...laborRow(formData) });
-  if (await failed(insertError, "save the labour entry")) return;
+  // A worker was added to a Labour expense: move it to labor_entries (one per worker). Insert first, so a failed
+  // delete can only leave a duplicate to remove by hand, never lose the entry.
+  if ((await insertLabour(formData)) === null) return;
+  const { supabase } = await requireUser();
   const { error: deleteError } = await supabase.from("expense_entries").delete().eq("id", String(formData.get("id")));
   if (deleteError) {
     await flash("warning", "Saved as a labour entry, but the old expense couldn't be removed. Delete it by hand.");

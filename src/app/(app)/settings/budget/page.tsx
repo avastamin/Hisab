@@ -13,7 +13,7 @@ export default async function BudgetSettingsPage() {
   const monthSpending = monthTotals.reduce((sum, t) => sum + t.total, 0);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
       <PageHeader title="Monthly Budget" backHref="/settings" />
 
       <Card>

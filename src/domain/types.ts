@@ -82,6 +82,8 @@ export interface Worker {
   name: string;
   defaultDailyRate?: number;
   phone?: string;
+  /** Hex colour the worker is shown in on calendars. Unset means one is derived from the id (see lib/workerColors.ts). */
+  color?: string;
   createdAt: ISODateTimeString;
 }
 
@@ -105,6 +107,8 @@ export interface LaborEntry extends EntryBase {
   workerId: string;
   daysWorked: number;
   dailyRate: number;
+  /** The days worked, picked on the calendar, sorted. Empty for entries made before work dates were recorded. */
+  workDates: ISODateString[];
   /** daysWorked * dailyRate, persisted so historical rate changes don't rewrite past totals. */
   amount: number;
 }

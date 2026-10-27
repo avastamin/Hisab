@@ -58,3 +58,67 @@ body {
   background: var(--bg);
   color: var(--text-primary);
 }
+
+/* FullCalendar (worker calendars), themed with the tokens above so it follows light and dark mode. */
+.work-calendar .fc {
+  --fc-border-color: var(--border-c);
+  --fc-page-bg-color: var(--surface);
+  --fc-neutral-bg-color: var(--surface-alt);
+  --fc-today-bg-color: color-mix(in srgb, var(--primary) 12%, transparent);
+  --fc-highlight-color: color-mix(in srgb, var(--primary) 22%, transparent);
+  --fc-button-text-color: var(--text-primary);
+  --fc-button-bg-color: var(--surface-alt);
+  --fc-button-border-color: var(--border-c);
+  --fc-button-hover-bg-color: var(--border-c);
+  --fc-button-hover-border-color: var(--border-c);
+  --fc-button-active-bg-color: var(--border-c);
+  --fc-button-active-border-color: var(--border-c);
+  font-size: 0.875rem;
+}
+.work-calendar .fc .fc-toolbar.fc-header-toolbar {
+  margin-bottom: 0.75rem;
+}
+.work-calendar .fc .fc-toolbar-title {
+  font-size: 1rem;
+  font-weight: 600;
+}
+.work-calendar .fc .fc-button {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8125rem;
+  text-transform: capitalize;
+}
+.work-calendar .fc .fc-button:focus {
+  box-shadow: none;
+}
+.work-calendar .fc .fc-col-header-cell-cushion,
+.work-calendar .fc .fc-daygrid-day-number {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+.work-calendar .fc .fc-daygrid-day-frame {
+  min-height: 4.5rem;
+}
+.work-calendar .fc .fc-daygrid-event {
+  border-radius: 4px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.work-calendar .work-mark-faint {
+  border-style: dashed;
+  font-weight: 500;
+}
+.work-calendar-picker .fc .fc-daygrid-day {
+  cursor: pointer;
+}
+.work-calendar-picker .fc .fc-daygrid-day:hover {
+  background: var(--fc-neutral-bg-color);
+}
+@media (max-width: 480px) {
+  .work-calendar .fc .fc-daygrid-day-frame {
+    min-height: 3.5rem;
+  }
+  .work-calendar .fc .fc-daygrid-event {
+    font-size: 0.625rem;
+  }
+}

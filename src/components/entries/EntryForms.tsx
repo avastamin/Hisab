@@ -5,6 +5,7 @@ import { today } from "@/lib/format";
 import { Field, TextInput, Select, TextArea, SubmitButton } from "@/components/form/Field";
 import { ChooseSelect, HiddenFields, TagPicker, categoryOptions, groupedTagOptions, type CommonProps } from "./FormParts";
 import { LiveTotal } from "./LiveTotal";
+import { LabourFields, type OtherWorkDays } from "./LabourFields";
 import { isLabourCategory } from "@/lib/labour";
 
 // Labour and Sale forms, shared by the Add and Edit pages. When `entry` is given, the form is pre-filled and
@@ -19,22 +20,15 @@ export function LaborForm({
   returnTo,
   costOptions,
   workers,
+  otherWorkDays,
   entry,
-}: CommonProps & { costOptions: SelectOption[]; workers: Worker[]; entry?: LaborEntry }) {
+}: CommonProps & { costOptions: SelectOption[]; workers: Worker[]; otherWorkDays: OtherWorkDays[]; entry?: LaborEntry }) {
   return (
     <form action={action} className="flex flex-col gap-4">
       <HiddenFields id={entry?.id} returnTo={returnTo} />
 
-      <Field label="Date">
+      <Field label="Date" hint="When it was paid; it decides which month the cost counts in.">
         <TextInput type="date" name="date" defaultValue={entry?.date ?? today()} required />
-      </Field>
-
-      <Field label="Worker">
-        <ChooseSelect
-          name="workerId"
-          defaultValue={entry?.workerId}
-          options={workers.map((w) => ({ id: w.id, label: w.name }))}
-        />
       </Field>
 
       <Field label="What is this for?">
@@ -51,23 +45,8 @@ export function LaborForm({
 
       <TagPicker tags={tags} selected={entry?.tagIds} />
 
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Days worked">
-          <TextInput
-            type="number"
-            name="daysWorked"
-            min="0.5"
-            step="0.5"
-            inputMode="decimal"
-            defaultValue={entry?.daysWorked ?? 1}
-            required
-          />
-        </Field>
-        <Field label="Daily rate">
-          <TextInput type="number" name="dailyRate" min="0" step="0.01" inputMode="decimal" defaultValue={entry?.dailyRate} required />
-        </Field>
-      </div>
-      <LiveTotal a="daysWorked" b="dailyRate" />
+      {/* Editing one entry keeps it to one worker; a new entry can cover several, saved as one entry each. */}
+      <LabourFields workers={workers} otherWorkDays={otherWorkDays} entry={entry} multiple={!entry} />
 
       <Field label="Note (optional)">
         <TextArea name="note" defaultValue={entry?.note} />

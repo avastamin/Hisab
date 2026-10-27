@@ -9,7 +9,7 @@ export default async function CropsPage() {
   const { crops, cropCycles } = await getAppData();
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
       <PageHeader title="Crops" backHref="/settings" />
       <p className="-mt-2 text-sm text-text-secondary">
         A crop is what you grow (e.g. &quot;Banana&quot;). Each planting of it is a crop cycle. New crops are added from

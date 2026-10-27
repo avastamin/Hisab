@@ -112,6 +112,7 @@ function laborEntry(
     kind: "labor",
     categoryId: labor.id,
     tagIds: [],
+    workDates: [],
     createdAt: `${partial.date}T00:00:00.000Z`,
     ...partial,
   };

@@ -33,7 +33,7 @@ export default async function EntriesPage({ searchParams }: PageProps<"/entries"
   });
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
       <PageHeader title="All Entries" backHref="/" />
 
       <MonthPicker month={month} basePath="/entries" />

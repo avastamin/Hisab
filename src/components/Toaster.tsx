@@ -88,7 +88,7 @@ export function Toaster() {
   return (
     <div
       aria-live="polite"
-      className="pointer-events-none fixed inset-x-0 bottom-24 z-50 mx-auto flex w-full max-w-md flex-col gap-2 px-4"
+      className="pointer-events-none fixed inset-x-0 bottom-24 z-50 mx-auto flex w-full max-w-md flex-col gap-2 px-4 md:bottom-6 md:left-auto md:right-6 md:mx-0 md:max-w-sm md:px-0"
     >
       {toasts.map((t) => {
         const { icon: Icon, className } = STYLES[t.type];

@@ -80,6 +80,8 @@ create table if not exists workers (
   name text not null,
   default_daily_rate numeric,
   phone text,
+  -- Colour the worker is shown in on calendars (a hex value); null picks one from the id.
+  color text,
   created_at timestamptz not null default now()
 );
 
@@ -106,6 +108,8 @@ create table if not exists labor_entries (
   worker_id uuid not null references workers (id) on delete restrict,
   days_worked numeric not null,
   daily_rate numeric not null,
+  -- The days the worker worked, picked on the calendar. Usually days_worked = their count, but half days can differ.
+  work_dates date[] not null default '{}',
   amount numeric not null,
   created_at timestamptz not null default now()
 );
@@ -402,3 +406,8 @@ insert into budget_settings (user_id, enabled, monthly_amount)
 select u.id, false, 0
 from auth.users u
 on conflict (user_id) do nothing;
+
+-- Labour work dates and worker colours (same as migrations/20261027_labour_work_dates.sql), for databases
+-- created before these columns were added to the tables above.
+alter table labor_entries add column if not exists work_dates date[] not null default '{}';
+alter table workers add column if not exists color text;

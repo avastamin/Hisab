@@ -11,7 +11,7 @@ export default async function AddSalePage({ searchParams }: PageProps<"/add-sale
   const { cropCycles, categories, tags } = await getAppData();
 
   return (
-    <div>
+    <div className="mx-auto w-full max-w-2xl">
       <PageHeader title="Add Sale" backHref={returnTo} />
       <Card>
         {cropCycles.length === 0 ? (

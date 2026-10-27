@@ -4,14 +4,14 @@ import { useState } from "react";
 import type { CategoryGroup, ExpenseEntry, Worker } from "@/domain/types";
 import { CATEGORY_GROUPS } from "@/domain/categoryGroups";
 import type { SelectOption } from "@/lib/costCenterOptions";
-import { formatMoney, today } from "@/lib/format";
+import { today } from "@/lib/format";
 import { isLabourCategory } from "@/lib/labour";
-import { laborEntryAmount } from "@/domain/money";
 import { Field, Select, TextInput, TextArea, SubmitButton } from "@/components/form/Field";
 import { ChooseSelect, HiddenFields, TagPicker, type CommonProps } from "./FormParts";
+import { LabourFields, type OtherWorkDays } from "./LabourFields";
 
 // Client Component because the Tag list follows the chosen category (Agro / Household / Other), and picking the
-// Labour tag swaps the Amount field for Worker / Days / Daily rate. Submitted with a workerId, the add/update
+// Labour tag swaps the Amount field for workers, their days on a calendar and daily rates. Submitted with a workerId, the add/update
 // actions save it as a labour entry instead of a plain expense. The category itself isn't saved: it's implied by
 // the tag.
 export function ExpenseForm({
@@ -22,11 +22,13 @@ export function ExpenseForm({
   returnTo,
   costOptions,
   workers,
+  otherWorkDays,
   entry,
   defaultCostCenterId,
 }: CommonProps & {
   costOptions: SelectOption[];
   workers: Worker[];
+  otherWorkDays: OtherWorkDays[];
   entry?: ExpenseEntry;
   defaultCostCenterId?: string;
 }) {
@@ -54,20 +56,8 @@ export function ExpenseForm({
       setCategoryId("");
     }
   }
-  const [workerId, setWorkerId] = useState("");
-  const [daysWorked, setDaysWorked] = useState("1");
-  // An existing labour expense becomes 1 day at its old amount, so converting it doesn't change the total.
-  const [dailyRate, setDailyRate] = useState(entry ? String(entry.amount) : "");
-
   const isLabour = isLabourCategory(categories.find((c) => c.id === categoryId));
   const askForWorker = isLabour && workers.length > 0;
-  const labourTotal = laborEntryAmount(Number(daysWorked) || 0, Number(dailyRate) || 0);
-
-  function chooseWorker(id: string) {
-    setWorkerId(id);
-    const rate = workers.find((w) => w.id === id)?.defaultDailyRate;
-    if (!dailyRate && rate !== undefined) setDailyRate(String(rate));
-  }
 
   return (
     <form action={action} className="flex flex-col gap-4">
@@ -114,17 +104,6 @@ export function ExpenseForm({
         </Field>
       ) : null}
 
-      {askForWorker ? (
-        <Field label="Worker">
-          <ChooseSelect
-            name="workerId"
-            defaultValue={workerId}
-            options={workers.map((w) => ({ id: w.id, label: w.name }))}
-            onChange={chooseWorker}
-          />
-        </Field>
-      ) : null}
-
       {isLabour && workers.length === 0 ? (
         <p className="-mt-2 text-xs text-text-secondary">
           Add workers in Settings → Workers to record who did the work.
@@ -134,37 +113,13 @@ export function ExpenseForm({
       <TagPicker tags={tags} selected={entry?.tagIds} />
 
       {askForWorker ? (
-        <>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Days worked">
-              <TextInput
-                type="number"
-                name="daysWorked"
-                min="0.5"
-                step="0.5"
-                inputMode="decimal"
-                value={daysWorked}
-                onChange={(e) => setDaysWorked(e.target.value)}
-                required
-              />
-            </Field>
-            <Field label="Daily rate">
-              <TextInput
-                type="number"
-                name="dailyRate"
-                min="0"
-                step="0.01"
-                inputMode="decimal"
-                value={dailyRate}
-                onChange={(e) => setDailyRate(e.target.value)}
-                required
-              />
-            </Field>
-          </div>
-          <p className="-mt-2 text-sm text-text-secondary">
-            Total: <span className="font-semibold text-text-primary">{formatMoney(labourTotal)}</span>
-          </p>
-        </>
+        // An existing labour expense becomes 1 day at its old amount, so converting it doesn't change the total.
+        <LabourFields
+          workers={workers}
+          otherWorkDays={otherWorkDays}
+          initialRate={entry ? String(entry.amount) : undefined}
+          multiple
+        />
       ) : (
         <Field label="Amount">
           <TextInput

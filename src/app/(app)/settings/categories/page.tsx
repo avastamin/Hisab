@@ -26,7 +26,7 @@ export default async function CategoriesPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
       <PageHeader title="Categories & Tags" backHref="/settings" />
       <p className="-mt-2 text-sm text-text-secondary">
         Every expense goes under a category (Agro, Household or Other) and one of its tags, so reports can show what

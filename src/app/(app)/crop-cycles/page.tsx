@@ -27,7 +27,7 @@ export default async function CropCyclesPage() {
           <p className="text-sm text-text-secondary">No crop cycles yet. Create one to start tracking cost and revenue.</p>
         </Card>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {cropCycles.map((cycle) => (
             <Link key={cycle.id} href={`/crop-cycles/${cycle.id}`}>
               <Card>

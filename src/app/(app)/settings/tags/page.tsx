@@ -9,7 +9,7 @@ export default async function TagsPage() {
   const { tags } = await getAppData();
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
       <PageHeader title="Labels" backHref="/settings" />
       <p className="-mt-2 text-sm text-text-secondary">
         Optional extras you can add to any entry, on top of its tag, e.g. Organic or Wholesale. Reports show spending

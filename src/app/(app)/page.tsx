@@ -27,7 +27,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
 
   return (
     <div className="flex flex-col gap-5">
-      <h1 className="text-2xl font-bold text-text-primary">Hisab</h1>
+      <h1 className="text-2xl font-bold text-text-primary md:hidden">Hisab</h1>
 
       <div className="flex gap-3">
         <StatTile label="Active crop cycles" value={String(activeCycles.length)} />
@@ -63,17 +63,20 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
         </nav>
       </div>
 
-      <Card>
-        <h2 className="mb-3 text-base font-semibold text-text-primary">Expense vs Revenue (last {range} months)</h2>
-        <ExpenseRevenueDonut totalExpense={overallTotals.totalExpense} totalRevenue={overallTotals.totalRevenue} />
-      </Card>
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+        <Card>
+          <h2 className="mb-3 text-base font-semibold text-text-primary">Expense vs Revenue (last {range} months)</h2>
+          <ExpenseRevenueDonut totalExpense={overallTotals.totalExpense} totalRevenue={overallTotals.totalRevenue} />
+        </Card>
 
-      <Card>
-        <h2 className="mb-3 text-base font-semibold text-text-primary">Monthly Cash Flow</h2>
-        <MonthlyCashFlowChart key={range} data={cashFlow} />
-      </Card>
+        <Card>
+          <h2 className="mb-3 text-base font-semibold text-text-primary">Monthly Cash Flow</h2>
+          <MonthlyCashFlowChart key={range} data={cashFlow} />
+        </Card>
+      </div>
 
-      <Card>
+      {/* The sidebar has these links from tablet width up. */}
+      <Card className="md:hidden">
         <h2 className="mb-3 text-base font-semibold text-text-primary">Quick add</h2>
         <div className="flex flex-col gap-2">
           <Link href="/add-expense" className="rounded-lg bg-primary px-4 py-3 text-center font-semibold text-primary-text">
@@ -85,9 +88,10 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
           <Link href="/add-sale" className="rounded-lg border border-border bg-surface-alt px-4 py-3 text-center font-semibold text-text-primary">
             Add Sale
           </Link>
-          <Link href="/entries" className="pt-1 text-center text-sm font-medium text-primary">
-            See all entries →
-          </Link>
+          <div className="flex justify-center gap-5 pt-1 text-sm font-medium text-primary">
+            <Link href="/entries">See all entries →</Link>
+            <Link href="/worker-calendar">Worker calendar →</Link>
+          </div>
         </div>
       </Card>
 
@@ -98,7 +102,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
             <p className="text-sm text-text-secondary">No active crop cycles yet. Start one from the Crops tab.</p>
           </Card>
         ) : (
-          <div className="flex flex-col gap-3">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {activeCycles.map((cycle) => {
               const costCenter = costCenters.find((c) => c.cropCycleId === cycle.id);
               if (!costCenter) return null;
