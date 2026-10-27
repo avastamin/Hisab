@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import type { AuthActionState } from "@/lib/actions/auth";
+import { PendingButton } from "@/components/form/PendingButton";
 
 export function AuthForm({
   action,
@@ -40,13 +41,12 @@ export function AuthForm({
 
       {state.error ? <p className="text-sm text-negative">{state.error}</p> : null}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="mt-2 rounded-lg bg-primary px-4 py-3 font-semibold text-primary-text disabled:opacity-60"
+      <PendingButton
+        pending={pending}
+        className="mt-2 rounded-lg bg-primary px-4 py-3 font-semibold text-primary-text hover:brightness-110 disabled:opacity-70"
       >
         {pending ? pendingLabel : submitLabel}
-      </button>
+      </PendingButton>
     </form>
   );
 }

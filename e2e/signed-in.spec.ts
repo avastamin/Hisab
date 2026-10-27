@@ -263,4 +263,50 @@ test.describe("signed in", () => {
       }
     });
   });
+
+  test("home charts: preset and custom ranges", async ({ page }) => {
+    await logIn(page);
+    const donutTitle = page.getByRole("heading", { name: /^Expense vs Revenue/ });
+    const bars = page.getByRole("button", { name: /: revenue ৳/ });
+
+    await page.getByRole("button", { name: "3 months" }).click();
+    await expect(page).toHaveURL(/\?range=3$/);
+    await expect(donutTitle).toHaveText("Expense vs Revenue (last 3 months)");
+    await expect(bars).toHaveCount(3);
+
+    await page.getByRole("button", { name: "1 month" }).click();
+    await expect(donutTitle).toHaveText("Expense vs Revenue (this month)");
+    await expect(bars).toHaveCount(1);
+
+    await page.getByRole("button", { name: "Custom" }).click();
+    await page.getByLabel("Start date").fill("2026-01-15");
+    await page.getByLabel("End date").fill("2026-03-10");
+    await page.getByRole("button", { name: "Apply" }).click();
+    await expect(page).toHaveURL(/range=custom&from=2026-01-15&to=2026-03-10/);
+    await expect(donutTitle).toHaveText("Expense vs Revenue (Jan 15, 2026 – Mar 10, 2026)");
+    await expect(bars).toHaveCount(3);
+    await expect(page.getByRole("button", { name: /^Jan 2026:/ })).toBeVisible();
+
+    await page.getByRole("button", { name: "12 months" }).click();
+    await expect(page).toHaveURL(/\/$/);
+    await expect(bars).toHaveCount(12);
+  });
+
+  test("action buttons show a spinner while the server works", async ({ page }) => {
+    const tag = `E2E Busy ${runId}`;
+    await logIn(page);
+    await page.goto("/settings/tags");
+    await page.getByLabel("Name", { exact: true }).fill(tag);
+    const add = page.getByRole("button", { name: "Add Label" });
+    await add.click();
+    await expect(add).toHaveAttribute("aria-busy", "true");
+    await expect(add).toBeDisabled();
+    await expectToast(page, "success", tag);
+    await expect(add).not.toHaveAttribute("aria-busy");
+
+    page.once("dialog", (d) => d.accept());
+    const row = page.locator("div").filter({ hasText: tag }).filter({ has: page.getByRole("button", { name: "Delete label" }) }).last();
+    await row.getByRole("button", { name: "Delete label" }).click();
+    await expectToast(page, "success", "deleted");
+  });
 });

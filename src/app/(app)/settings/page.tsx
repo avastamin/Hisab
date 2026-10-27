@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronRight, Sprout, Tags, Bookmark, Users, CalendarDays, Car, Gauge, LogOut } from "lucide-react";
 import { Card } from "@/components/Card";
 import { signOut } from "@/lib/actions/auth";
+import { PendingButton } from "@/components/form/PendingButton";
 
 const ITEMS = [
   { icon: Sprout, label: "Crops", href: "/settings/crops", description: "Rename or remove the crops you grow" },
@@ -34,10 +35,10 @@ export default function SettingsPage() {
       </div>
 
       <form action={signOut}>
-        <button type="submit" className="flex w-full items-center md:w-auto md:px-6 justify-center gap-2 rounded-lg border border-border bg-surface px-4 py-3 font-semibold text-negative">
+        <PendingButton className="flex w-full items-center md:w-auto md:px-6 justify-center gap-2 rounded-lg border border-border bg-surface px-4 py-3 font-semibold text-negative hover:bg-surface-alt">
           <LogOut size={18} />
           Log out
-        </button>
+        </PendingButton>
       </form>
     </div>
   );

@@ -1,4 +1,5 @@
 import { getAppData } from "@/lib/data/queries";
+import { PendingButton } from "@/components/form/PendingButton";
 import { addCropCycle, addCrop } from "@/lib/actions/entries";
 import { Card } from "@/components/Card";
 import { PageHeader } from "@/components/PageHeader";
@@ -23,9 +24,9 @@ export default async function NewCropCyclePage({ searchParams }: PageProps<"/new
         </p>
         <form action={addCrop} className="flex gap-2">
           <TextInput type="text" name="name" placeholder="Crop name" required className="flex-1" />
-          <button type="submit" className="rounded-lg bg-primary px-4 py-2.5 font-semibold text-primary-text">
+          <PendingButton className="rounded-lg bg-primary px-4 py-2.5 font-semibold text-primary-text hover:brightness-110">
             Add
-          </button>
+          </PendingButton>
         </form>
       </Card>
 

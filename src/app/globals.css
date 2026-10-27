@@ -59,6 +59,16 @@ body {
   color: var(--text-primary);
 }
 
+/* Tailwind 4 gives buttons the default arrow; anything clickable should show the hand. */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary,
+  select {
+    cursor: pointer;
+  }
+}
+
 /* FullCalendar (worker calendars), themed with the tokens above so it follows light and dark mode. */
 .work-calendar .fc {
   --fc-border-color: var(--border-c);

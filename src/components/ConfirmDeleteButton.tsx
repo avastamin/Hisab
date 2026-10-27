@@ -2,6 +2,7 @@
 
 import { Trash2 } from "lucide-react";
 import { showToast } from "@/components/Toaster";
+import { PendingButton } from "@/components/form/PendingButton";
 
 // Client Component so it can ask for confirmation before the delete action runs. `compact` renders just the bin
 // icon, for rows in a settings list.
@@ -33,17 +34,14 @@ export function ConfirmDeleteButton({
       <input type="hidden" name="id" value={id} />
       {returnTo ? <input type="hidden" name="returnTo" value={returnTo} /> : null}
       {compact ? (
-        <button type="submit" aria-label={`Delete ${label}`} className="p-1 text-text-secondary">
-          <Trash2 size={18} />
-        </button>
+        <PendingButton aria-label={`Delete ${label}`} spinnerSize={18} className="group p-1 text-text-secondary hover:text-negative">
+          <Trash2 size={18} className="group-aria-busy:hidden" />
+        </PendingButton>
       ) : (
-        <button
-          type="submit"
-          className="flex w-full items-center justify-center gap-2 rounded-lg border border-negative px-4 py-3 font-semibold text-negative"
-        >
-          <Trash2 size={18} />
+        <PendingButton className="group flex w-full items-center justify-center gap-2 rounded-lg border border-negative px-4 py-3 font-semibold text-negative hover:bg-negative/10">
+          <Trash2 size={18} className="group-aria-busy:hidden" />
           Delete {label}
-        </button>
+        </PendingButton>
       )}
     </form>
   );

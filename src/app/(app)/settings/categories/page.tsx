@@ -1,4 +1,5 @@
 import { ChevronDown } from "lucide-react";
+import { PendingButton } from "@/components/form/PendingButton";
 import { getAppData } from "@/lib/data/queries";
 import { addCategory, updateCategory, deleteCategory } from "@/lib/actions/settings";
 import { CATEGORY_GROUPS } from "@/domain/categoryGroups";
@@ -95,9 +96,9 @@ function TagRow({ category, count }: { category: Category; count: number }) {
                 ))}
               </Select>
             ) : null}
-            <button type="submit" className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-text">
+            <PendingButton className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-text hover:brightness-110">
               Save
-            </button>
+            </PendingButton>
           </form>
           {count === 0 ? (
             <ConfirmDeleteButton

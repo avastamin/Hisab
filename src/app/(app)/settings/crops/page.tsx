@@ -1,4 +1,5 @@
 import { getAppData } from "@/lib/data/queries";
+import { PendingButton } from "@/components/form/PendingButton";
 import { renameCrop, deleteCrop } from "@/lib/actions/entries";
 import { Card } from "@/components/Card";
 import { PageHeader } from "@/components/PageHeader";
@@ -25,9 +26,9 @@ export default async function CropsPage() {
                 <form action={renameCrop} className="flex flex-1 gap-2">
                   <input type="hidden" name="id" value={crop.id} />
                   <TextInput type="text" name="name" defaultValue={crop.name} required aria-label="Crop name" className="min-w-0 flex-1" />
-                  <button type="submit" className="rounded-lg border border-border bg-surface-alt px-3 text-sm font-semibold text-text-primary">
+                  <PendingButton className="rounded-lg border border-border bg-surface-alt px-3 text-sm font-semibold text-text-primary hover:bg-border">
                     Save
-                  </button>
+                  </PendingButton>
                 </form>
                 {/* Deleting a crop would also delete its cycles and their entries, so only empty crops can go. */}
                 {cycleCount === 0 ? <ConfirmDeleteButton action={deleteCrop} id={crop.id} label="crop" compact /> : null}

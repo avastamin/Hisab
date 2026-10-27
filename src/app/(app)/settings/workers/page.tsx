@@ -3,6 +3,7 @@ import { CalendarDays } from "lucide-react";
 import { getAppData } from "@/lib/data/queries";
 import { addWorker, deleteWorker, updateWorkerColor } from "@/lib/actions/settings";
 import { formatMoney } from "@/lib/format";
+import { PendingButton } from "@/components/form/PendingButton";
 import { WORKER_COLORS, workerColor } from "@/lib/workerColors";
 import { Card } from "@/components/Card";
 import { PageHeader } from "@/components/PageHeader";
@@ -80,15 +81,15 @@ export default async function WorkersPage() {
             >
               <input type="hidden" name="id" value={w.id} />
               {WORKER_COLORS.map((c) => (
-                <button
+                <PendingButton
                   key={c.value}
-                  type="submit"
                   name="color"
                   value={c.value}
                   title={c.name}
                   aria-label={c.name}
                   aria-pressed={workerColor(w) === c.value}
-                  className="h-6 w-6 rounded-full border-2 border-surface ring-offset-1 ring-offset-surface aria-pressed:ring-2 aria-pressed:ring-text-primary"
+                  spinnerSize={14}
+                  className="h-6 w-6 rounded-full border-2 border-surface text-white ring-offset-1 ring-offset-surface hover:scale-110 aria-pressed:ring-2 aria-pressed:ring-text-primary"
                   style={{ background: c.value }}
                 />
               ))}

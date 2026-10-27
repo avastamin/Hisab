@@ -1,7 +1,17 @@
 import { friendlyDbError } from "../dbErrors";
 import { isLabourCategory } from "../labour";
 import { safeReturnTo } from "../returnTo";
-import { chartRangeFromParam, lastMonths, monthFromParam, monthRange, monthSpan, shiftMonth } from "../format";
+import {
+  chartPeriodFromParams,
+  chartRangeFromParam,
+  lastMonths,
+  monthFromParam,
+  monthRange,
+  monthSpan,
+  monthsBetween,
+  shiftMonth,
+  today,
+} from "../format";
 
 describe("safeReturnTo", () => {
   it.each([
@@ -79,10 +89,35 @@ describe("chart ranges", () => {
     expect(lastMonths(36, "2026-10")[0]).toBe("2023-11");
   });
 
-  it("accepts 12, 24 or 36 and falls back to 12", () => {
-    expect(chartRangeFromParam("24")).toBe(24);
-    expect(chartRangeFromParam("36")).toBe(36);
-    for (const bad of [undefined, "6", "abc", "48", ["24"]]) expect(chartRangeFromParam(bad)).toBe(12);
+  it("accepts 1, 3, 6 or 12 and falls back to 12", () => {
+    for (const n of [1, 3, 6, 12]) expect(chartRangeFromParam(String(n))).toBe(n);
+    for (const bad of [undefined, "24", "abc", "48", ["6"]]) expect(chartRangeFromParam(bad)).toBe(12);
+  });
+
+  it("covers whole months for a preset", () => {
+    const thisMonth = today().slice(0, 7);
+    const one = chartPeriodFromParams({ range: "1" });
+    expect(one.months).toEqual([thisMonth]);
+    expect(one.start).toBe(`${thisMonth}-01`);
+    expect(chartPeriodFromParams({ range: "3" }).months).toHaveLength(3);
+  });
+
+  it("uses the exact days of a custom range, swapping a backwards one", () => {
+    const period = chartPeriodFromParams({ range: "custom", from: "2026-03-15", to: "2026-01-10" });
+    expect(period).toEqual({ range: "custom", start: "2026-01-10", end: "2026-03-15", months: ["2026-01", "2026-02", "2026-03"] });
+  });
+
+  it("ignores invalid custom dates and caps very long ranges", () => {
+    const bad = chartPeriodFromParams({ range: "custom", from: "2026-02-31", to: "nope" });
+    expect(bad.end).toBe(today());
+    expect(bad.months).toHaveLength(12);
+    const long = chartPeriodFromParams({ range: "custom", from: "1990-01-01", to: "2026-10-27" });
+    expect(long.months).toHaveLength(120);
+    expect(long.start).toBe(`${long.months[0]}-01`);
+  });
+
+  it("lists the months between two months", () => {
+    expect(monthsBetween("2025-11", "2026-02")).toEqual(["2025-11", "2025-12", "2026-01", "2026-02"]);
   });
 
   it("describes the span", () => {

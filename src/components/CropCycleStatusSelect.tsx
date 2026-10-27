@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { updateCropCycleStatus } from "@/lib/actions/entries";
+import { FormPendingSpinner } from "@/components/form/PendingButton";
 
 const STATUSES = ["planned", "growing", "harvested", "closed"] as const;
 
@@ -30,6 +31,7 @@ export function CropCycleStatusSelect({ id, status }: { id: string; status: stri
           </option>
         ))}
       </select>
+      <FormPendingSpinner />
     </form>
   );
 }

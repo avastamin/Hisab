@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { PendingButton } from "./PendingButton";
 
 export function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {
   return (
@@ -27,8 +28,8 @@ export function TextArea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement
 
 export function SubmitButton({ children }: { children: ReactNode }) {
   return (
-    <button type="submit" className="mt-2 rounded-lg bg-primary px-4 py-3 font-semibold text-primary-text">
+    <PendingButton className="mt-2 rounded-lg bg-primary px-4 py-3 font-semibold text-primary-text transition hover:brightness-110 disabled:opacity-70">
       {children}
-    </button>
+    </PendingButton>
   );
 }

@@ -18,7 +18,7 @@ function monthName(month: string, style: "short" | "full" | "axis-year"): string
 }
 
 /**
- * Revenue vs expense per month, for 12 to 36 months on a phone-width card. Bars are capped at 12px with a 2px gap
+ * Revenue vs expense per month, from 1 month up to a 120-month custom range, on a phone-width card. Bars are capped at 12px with a 2px gap
  * and thin out as the range grows; month labels thin out too (always keeping the latest month, and marking each
  * new year). Hover or tap a month to see its exact figures below the chart; tapping works where hover doesn't.
  */
