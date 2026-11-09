@@ -12,7 +12,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/worker-
   const data = await getAppData();
 
   return (
-    <div className="flex flex-col gap-4">
+    <div data-full-width className="flex flex-col gap-4">
       <PageHeader title="Calendar" />
       <CalendarView
         items={buildCalendarItems(data)}
