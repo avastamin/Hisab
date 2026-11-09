@@ -102,7 +102,12 @@ export function LabourFields({
 
   function addRow() {
     const key = Math.max(...rows.map((r) => r.key)) + 1;
-    setRows((current) => [...current, { key, workerId: "", label: "", dates: [], days: "1", daysTouched: false, rate: "" }]);
+    // Another worker on a day added from the calendar starts on that day too.
+    const dates = entry ? [] : initialDates;
+    setRows((current) => [
+      ...current,
+      { key, workerId: "", label: "", dates, days: String(Math.max(dates.length, 1)), daysTouched: false, rate: "" },
+    ]);
     setActiveKey(key);
   }
 

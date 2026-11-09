@@ -331,7 +331,7 @@ test.describe("signed in", () => {
       await selectByLabel(page, "Worker 2", "Casual worker (not saved)");
       await page.getByLabel("Daily rate").nth(1).fill("300");
       // Both start on the day they were added from.
-      await expect(page.getByLabel("Days worked").nth(1)).toHaveValue("1");
+      await expect(page.getByText("1 day picked")).toHaveCount(2);
       await page.getByRole("button", { name: "Save Labour" }).click();
       await expectToast(page, "success", "2 labour entries saved");
     });
@@ -343,10 +343,13 @@ test.describe("signed in", () => {
 
     await test.step("clean up", async () => {
       for (const name of [helper, "Casual worker"]) {
-        await day.locator(".fc-event", { hasText: name }).first().click();
+        const mark = day.locator(".fc-event", { hasText: name });
+        const before = await mark.count();
+        await mark.first().click();
         await page.getByRole("dialog", { name }).getByRole("button", { name: "Delete" }).click();
         await page.getByRole("dialog", { name: "Delete this labour entry?" }).getByRole("button", { name: "Delete" }).click();
-        await expectToast(page, "success", "Labour entry deleted");
+        // The toast alone could be the previous delete's, still on screen.
+        await expect(mark).toHaveCount(before - 1);
       }
     });
   });
