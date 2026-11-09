@@ -105,7 +105,9 @@ create table if not exists labor_entries (
   category_id uuid not null references categories (id) on delete restrict,
   tag_ids uuid[] not null default '{}',
   note text,
-  worker_id uuid not null references workers (id) on delete restrict,
+  -- Empty for a casual worker who isn't saved in workers; worker_label can then name them.
+  worker_id uuid references workers (id) on delete restrict,
+  worker_label text,
   days_worked numeric not null,
   daily_rate numeric not null,
   -- The days the worker worked, picked on the calendar. Usually days_worked = their count, but half days can differ.
@@ -411,3 +413,7 @@ on conflict (user_id) do nothing;
 -- created before these columns were added to the tables above.
 alter table labor_entries add column if not exists work_dates date[] not null default '{}';
 alter table workers add column if not exists color text;
+
+-- Casual workers (same as migrations/20261109_casual_labour.sql): labour entries without a saved worker.
+alter table labor_entries alter column worker_id drop not null;
+alter table labor_entries add column if not exists worker_label text;

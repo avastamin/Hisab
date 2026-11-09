@@ -221,8 +221,11 @@ test.describe("signed in", () => {
       await expect(page.getByRole("button", { name: new RegExp(`${ali}.*2 worked`) })).toBeVisible();
     });
 
-    await test.step("tapping a day opens the entry, where days can be added", async () => {
+    await test.step("tapping a day opens the entry, and Edit goes to where days can be added", async () => {
       await day("01").locator(".fc-event", { hasText: ali }).click();
+      const details = page.getByRole("dialog", { name: ali });
+      await expect(details.getByText("৳ 800.00")).toBeVisible();
+      await details.getByRole("link", { name: "Edit" }).click();
       await expect(page.getByRole("heading", { name: "Edit Labour" })).toBeVisible();
       await expect(page.getByLabel("Days worked")).toHaveValue("2");
       // Bina's days are shown faintly for context.
@@ -251,8 +254,8 @@ test.describe("signed in", () => {
       for (const name of [ali, bina]) {
         await page.goto("/worker-calendar");
         await day("02").locator(".fc-event", { hasText: name }).click();
-        page.once("dialog", (d) => d.accept());
-        await page.getByRole("button", { name: "Delete labour entry" }).click();
+        await page.getByRole("dialog", { name }).getByRole("button", { name: "Delete" }).click();
+        await page.getByRole("dialog", { name: "Delete this labour entry?" }).getByRole("button", { name: "Delete" }).click();
         await expectToast(page, "success", "Labour entry deleted");
       }
       await page.goto("/settings/workers");
@@ -260,6 +263,90 @@ test.describe("signed in", () => {
         page.once("dialog", (d) => d.accept());
         await workerRow(name).getByRole("button", { name: "Delete worker" }).click();
         await expectToast(page, "success", "Worker deleted");
+      }
+    });
+  });
+
+  test("calendar: a day's entries, adding on that day, details and delete", async ({ page }) => {
+    const month = new Date().toISOString().slice(0, 7);
+    const date = `${month}-12`;
+    const day = page.locator(`.fc-daygrid-day[data-date="${date}"]`);
+    const note = `E2E fish ${runId}`;
+    await logIn(page);
+
+    await test.step("tapping a day lists it, with buttons to add on that day", async () => {
+      await page.goto(`/worker-calendar?date=${date}`);
+      // The top of the day, clear of any entries already there.
+      await day.locator(".fc-daygrid-day-top").click();
+      const dayModal = page.getByRole("dialog");
+      await expect(dayModal.getByText("Add on this day")).toBeVisible();
+      await dayModal.getByRole("link", { name: "Family expense" }).click();
+    });
+
+    await test.step("the expense form starts on that day, under Household", async () => {
+      await expect(page.getByLabel("Date")).toHaveValue(date);
+      await expect(page.getByRole("combobox", { name: "Category", exact: true }).locator("option:checked")).toHaveText("Household");
+      await selectByLabel(page, "What is this for?", "General household (Household)");
+      await selectByLabel(page, "Tag", "Fish");
+      await page.getByLabel("Amount").fill("350");
+      await page.getByLabel("Note (optional)").fill(note);
+      await page.getByRole("button", { name: "Save Expense" }).click();
+      await expectToast(page, "success", "Expense saved");
+      await expect(page).toHaveURL(new RegExp(`/worker-calendar\\?date=${date}$`));
+    });
+
+    await test.step("it shows on the day; its details open from there, and deleting asks first", async () => {
+      const mark = day.locator(".fc-event", { hasText: "Fish ৳ 350" });
+      await mark.first().click();
+      const details = page.getByRole("dialog", { name: "Fish" });
+      await expect(details.getByRole("definition").filter({ hasText: "Family expenses" })).toBeVisible();
+      await expect(details.getByText(note)).toBeVisible();
+      await details.getByRole("button", { name: "Delete" }).click();
+      const confirm = page.getByRole("dialog", { name: "Delete this expense?" });
+      // Cancelling goes back to the details, with nothing deleted.
+      await confirm.getByRole("button", { name: "Cancel" }).click();
+      await expect(confirm).toBeHidden();
+      await details.getByRole("button", { name: "Delete" }).click();
+      await confirm.getByRole("button", { name: "Delete" }).click();
+      await expectToast(page, "success", "Expense deleted");
+      await expect(mark).toHaveCount(0);
+    });
+  });
+
+  // Needs supabase/migrations/20261109_casual_labour.sql to have been run.
+  test("calendar: casual workers, with and without a name", async ({ page }) => {
+    const month = new Date().toISOString().slice(0, 7);
+    const date = `${month}-13`;
+    const day = page.locator(`.fc-daygrid-day[data-date="${date}"]`);
+    const helper = `E2E Helper ${runId}`;
+    await logIn(page);
+
+    await test.step("two casual workers on one form, one named", async () => {
+      await page.goto(`/add-labor?date=${date}&returnTo=${encodeURIComponent(`/worker-calendar?date=${date}`)}`);
+      await selectByLabel(page, "What is this for?", "General farm (Farm)");
+      await selectByLabel(page, "Worker", "Casual worker (not saved)");
+      await page.getByLabel("Name (optional)").fill(helper);
+      await page.getByLabel("Daily rate").fill("300");
+      await page.getByRole("button", { name: "Add another worker" }).click();
+      await selectByLabel(page, "Worker 2", "Casual worker (not saved)");
+      await page.getByLabel("Daily rate").nth(1).fill("300");
+      // Both start on the day they were added from.
+      await expect(page.getByLabel("Days worked").nth(1)).toHaveValue("1");
+      await page.getByRole("button", { name: "Save Labour" }).click();
+      await expectToast(page, "success", "2 labour entries saved");
+    });
+
+    await test.step("they show on the calendar and are counted together", async () => {
+      await expect(day.locator(".fc-event", { hasText: helper })).toHaveCount(1);
+      await expect(page.getByRole("button", { name: /Casual workers.*worker-days/ })).toBeVisible();
+    });
+
+    await test.step("clean up", async () => {
+      for (const name of [helper, "Casual worker"]) {
+        await day.locator(".fc-event", { hasText: name }).first().click();
+        await page.getByRole("dialog", { name }).getByRole("button", { name: "Delete" }).click();
+        await page.getByRole("dialog", { name: "Delete this labour entry?" }).getByRole("button", { name: "Delete" }).click();
+        await expectToast(page, "success", "Labour entry deleted");
       }
     });
   });

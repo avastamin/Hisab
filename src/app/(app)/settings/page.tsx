@@ -3,13 +3,14 @@ import { ChevronRight, Sprout, Tags, Bookmark, Users, CalendarDays, Car, Gauge, 
 import { Card } from "@/components/Card";
 import { signOut } from "@/lib/actions/auth";
 import { PendingButton } from "@/components/form/PendingButton";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const ITEMS = [
   { icon: Sprout, label: "Crops", href: "/settings/crops", description: "Rename or remove the crops you grow" },
   { icon: Tags, label: "Categories & tags", href: "/settings/categories", description: "Agro, Household and Other, and the tags under each" },
   { icon: Bookmark, label: "Labels", href: "/settings/tags", description: "Optional extras like Organic or Wholesale" },
   { icon: Users, label: "Workers", href: "/settings/workers", description: "Day labourers you pay, and their calendar colours" },
-  { icon: CalendarDays, label: "Worker calendar", href: "/worker-calendar", description: "Which days each worker worked" },
+  { icon: CalendarDays, label: "Calendar", href: "/worker-calendar", description: "Every entry by day, and which days each worker worked" },
   { icon: Car, label: "Vehicles & other cost centers", href: "/settings/cost-centers", description: "Bikes, family members, and other household spending targets" },
   { icon: Gauge, label: "Monthly Budget", href: "/settings/budget", description: "Optional: set a household spending goal and track progress" },
 ];
@@ -33,6 +34,14 @@ export default function SettingsPage() {
           </Link>
         ))}
       </div>
+
+      <Card className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="flex-1">
+          <p className="font-semibold text-text-primary">Appearance</p>
+          <p className="text-xs text-text-secondary">Light, dark, or follow your device</p>
+        </div>
+        <ThemeToggle className="sm:w-72" />
+      </Card>
 
       <form action={signOut}>
         <PendingButton className="flex w-full items-center md:w-auto md:px-6 justify-center gap-2 rounded-lg border border-border bg-surface px-4 py-3 font-semibold text-negative hover:bg-surface-alt">

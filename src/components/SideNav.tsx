@@ -5,12 +5,13 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { Home, Sprout, BarChart3, Settings, CalendarDays, List, Plus } from "lucide-react";
+import { ThemeToggle } from "./ThemeToggle";
 
 const LINKS = [
   { href: "/", label: "Home", icon: Home },
   { href: "/crop-cycles", label: "Crops", icon: Sprout },
   { href: "/entries", label: "All entries", icon: List },
-  { href: "/worker-calendar", label: "Worker calendar", icon: CalendarDays },
+  { href: "/worker-calendar", label: "Calendar", icon: CalendarDays },
   { href: "/reports", label: "Reports", icon: BarChart3 },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
@@ -65,6 +66,8 @@ export function SideNav() {
           </Link>
         ))}
       </div>
+
+      <ThemeToggle className="mt-auto" />
     </aside>
   );
 }

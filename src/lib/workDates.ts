@@ -40,8 +40,12 @@ export function sharedDates(a: ISODateString[], b: Iterable<ISODateString>): ISO
 }
 
 /** The recorded days of labour entries (except the one being edited), slimmed down for the labour form's calendar. */
-export function otherWorkDays(entries: { id: string; workerId: string; workDates: ISODateString[] }[], exceptId?: string) {
+export function otherWorkDays(
+  entries: { id: string; workerId?: string; workerLabel?: string; workDates: ISODateString[] }[],
+  exceptId?: string,
+) {
+  // Casual workers have no workerId, so their days never count as "already in another entry" for anyone.
   return entries
     .filter((e) => e.id !== exceptId && e.workDates.length > 0)
-    .map(({ workerId, workDates }) => ({ workerId, workDates }));
+    .map(({ workerId, workerLabel, workDates }) => ({ workerId: workerId ?? "", label: workerLabel, workDates }));
 }

@@ -22,13 +22,21 @@ export function LaborForm({
   workers,
   otherWorkDays,
   entry,
-}: CommonProps & { costOptions: SelectOption[]; workers: Worker[]; otherWorkDays: OtherWorkDays[]; entry?: LaborEntry }) {
+  defaultDate,
+}: CommonProps & {
+  costOptions: SelectOption[];
+  workers: Worker[];
+  otherWorkDays: OtherWorkDays[];
+  entry?: LaborEntry;
+  /** A new entry's date (and first work day), e.g. the calendar day it was added from. */
+  defaultDate?: string;
+}) {
   return (
     <form action={action} className="flex flex-col gap-4">
       <HiddenFields id={entry?.id} returnTo={returnTo} />
 
       <Field label="Date" hint="When it was paid; it decides which month the cost counts in.">
-        <TextInput type="date" name="date" defaultValue={entry?.date ?? today()} required />
+        <TextInput type="date" name="date" defaultValue={entry?.date ?? defaultDate ?? today()} required />
       </Field>
 
       <Field label="What is this for?">
@@ -46,7 +54,13 @@ export function LaborForm({
       <TagPicker tags={tags} selected={entry?.tagIds} />
 
       {/* Editing one entry keeps it to one worker; a new entry can cover several, saved as one entry each. */}
-      <LabourFields workers={workers} otherWorkDays={otherWorkDays} entry={entry} multiple={!entry} />
+      <LabourFields
+        workers={workers}
+        otherWorkDays={otherWorkDays}
+        entry={entry}
+        initialDates={defaultDate ? [defaultDate] : undefined}
+        multiple={!entry}
+      />
 
       <Field label="Note (optional)">
         <TextArea name="note" defaultValue={entry?.note} />
@@ -66,14 +80,15 @@ export function SaleForm({
   cropCycles,
   entry,
   defaultCropCycleId,
-}: CommonProps & { cropCycles: CropCycle[]; entry?: SaleEntry; defaultCropCycleId?: string }) {
+  defaultDate,
+}: CommonProps & { cropCycles: CropCycle[]; entry?: SaleEntry; defaultCropCycleId?: string; defaultDate?: string }) {
   const defaultCycle = cropCycles.find((c) => c.id === (entry?.cropCycleId ?? defaultCropCycleId));
   return (
     <form action={action} className="flex flex-col gap-4">
       <HiddenFields id={entry?.id} returnTo={returnTo} />
 
       <Field label="Date">
-        <TextInput type="date" name="date" defaultValue={entry?.date ?? today()} required />
+        <TextInput type="date" name="date" defaultValue={entry?.date ?? defaultDate ?? today()} required />
       </Field>
 
       <Field label="Crop cycle">

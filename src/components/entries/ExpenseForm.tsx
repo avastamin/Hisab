@@ -25,22 +25,28 @@ export function ExpenseForm({
   otherWorkDays,
   entry,
   defaultCostCenterId,
+  defaultDate,
+  defaultGroup,
 }: CommonProps & {
   costOptions: SelectOption[];
   workers: Worker[];
   otherWorkDays: OtherWorkDays[];
   entry?: ExpenseEntry;
   defaultCostCenterId?: string;
+  defaultDate?: string;
+  /** Category to start with, e.g. Household for a family expense added from the calendar. */
+  defaultGroup?: CategoryGroup;
 }) {
   const initialCostCenterId = entry?.costCenterId ?? defaultCostCenterId;
   const [categoryId, setCategoryId] = useState(entry?.categoryId ?? "");
   const [group, setGroup] = useState<CategoryGroup | "">(
     categories.find((c) => c.id === entry?.categoryId)?.group ??
+      defaultGroup ??
       costOptions.find((o) => o.id === initialCostCenterId)?.group ??
       "",
   );
   // Once the category is picked by hand, choosing "What is this for?" no longer changes it.
-  const [groupTouched, setGroupTouched] = useState(entry !== undefined);
+  const [groupTouched, setGroupTouched] = useState(entry !== undefined || defaultGroup !== undefined);
   const tagsInGroup = categories.filter((c) => c.group === group);
 
   function chooseGroup(next: CategoryGroup | "") {
@@ -57,14 +63,13 @@ export function ExpenseForm({
     }
   }
   const isLabour = isLabourCategory(categories.find((c) => c.id === categoryId));
-  const askForWorker = isLabour && workers.length > 0;
 
   return (
     <form action={action} className="flex flex-col gap-4">
       <HiddenFields id={entry?.id} returnTo={returnTo} />
 
       <Field label="Date">
-        <TextInput type="date" name="date" defaultValue={entry?.date ?? today()} required />
+        <TextInput type="date" name="date" defaultValue={entry?.date ?? defaultDate ?? today()} required />
       </Field>
 
       <Field label="What is this for?">
@@ -106,18 +111,19 @@ export function ExpenseForm({
 
       {isLabour && workers.length === 0 ? (
         <p className="-mt-2 text-xs text-text-secondary">
-          Add workers in Settings → Workers to record who did the work.
+          Pick Casual worker below, or save your regular workers in Settings → Workers.
         </p>
       ) : null}
 
       <TagPicker tags={tags} selected={entry?.tagIds} />
 
-      {askForWorker ? (
+      {isLabour ? (
         // An existing labour expense becomes 1 day at its old amount, so converting it doesn't change the total.
         <LabourFields
           workers={workers}
           otherWorkDays={otherWorkDays}
           initialRate={entry ? String(entry.amount) : undefined}
+          initialDates={defaultDate ? [defaultDate] : undefined}
           multiple
         />
       ) : (

@@ -104,7 +104,10 @@ export interface ExpenseEntry extends EntryBase {
 
 export interface LaborEntry extends EntryBase {
   kind: "labor";
-  workerId: string;
+  /** The saved worker, or undefined for a casual worker who isn't in the workers list (see workerLabel). */
+  workerId?: string;
+  /** Optional name for a casual worker, e.g. "Helper 2". Only used when workerId is unset. */
+  workerLabel?: string;
   daysWorked: number;
   dailyRate: number;
   /** The days worked, picked on the calendar, sorted. Empty for entries made before work dates were recorded. */

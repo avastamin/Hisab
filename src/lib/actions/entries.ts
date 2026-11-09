@@ -8,6 +8,7 @@ import { safeReturnTo } from "@/lib/returnTo";
 import { flash } from "@/lib/flash";
 import { friendlyDbError } from "@/lib/dbErrors";
 import { parseWorkDates } from "@/lib/workDates";
+import { CASUAL_WORKER } from "@/lib/labour";
 
 function getTagIds(formData: FormData): string[] {
   return formData.getAll("tagIds").map(String).filter(Boolean);
@@ -52,20 +53,25 @@ function expenseRow(formData: FormData) {
   };
 }
 
-// The labour form can list several workers. Each one's workerId / daysWorked / dailyRate / workDates fields come
-// in the same order, and each becomes its own labour entry sharing the date, cost center, tag, labels and note.
+// The labour form can list several workers. Each one's workerId / workerLabel / daysWorked / dailyRate / workDates
+// fields come in the same order, and each becomes its own labour entry sharing the date, cost center, tag, labels
+// and note. A casual worker (workerId "casual") is saved with no worker and an optional name.
 function laborRows(formData: FormData) {
   const field = (name: string) => formData.getAll(name).map(String);
-  const [days, rates, workDates] = [field("daysWorked"), field("dailyRate"), field("workDates")];
+  const [labels, days, rates, workDates] = [field("workerLabel"), field("daysWorked"), field("dailyRate"), field("workDates")];
   return field("workerId").map((workerId, i) => {
     const daysWorked = Number(days[i]);
     const dailyRate = Number(rates[i]);
+    const casual = workerId === CASUAL_WORKER;
     return {
       date: String(formData.get("date")),
       cost_center_id: String(formData.get("costCenterId")),
       category_id: String(formData.get("categoryId")),
       tag_ids: getTagIds(formData),
-      worker_id: workerId,
+      worker_id: casual ? null : workerId,
+      // Only sent for casual workers, so saved workers keep saving on a database without the column yet. A label
+      // left on an entry later given a saved worker is ignored.
+      ...(casual ? { worker_label: labels[i]?.trim() || null } : {}),
       days_worked: daysWorked,
       daily_rate: dailyRate,
       work_dates: parseWorkDates(workDates[i]),

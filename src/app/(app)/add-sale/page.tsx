@@ -1,12 +1,13 @@
 import { getAppData } from "@/lib/data/queries";
 import { safeReturnTo } from "@/lib/returnTo";
+import { isoDateParam } from "@/lib/format";
 import { addSale } from "@/lib/actions/entries";
 import { Card } from "@/components/Card";
 import { PageHeader } from "@/components/PageHeader";
 import { SaleForm } from "@/components/entries/EntryForms";
 
 export default async function AddSalePage({ searchParams }: PageProps<"/add-sale">) {
-  const { cropCycleId, returnTo: returnToParam } = await searchParams;
+  const { cropCycleId, date, returnTo: returnToParam } = await searchParams;
   const returnTo = safeReturnTo(returnToParam);
   const { cropCycles, categories, tags } = await getAppData();
 
@@ -23,6 +24,7 @@ export default async function AddSalePage({ searchParams }: PageProps<"/add-sale
             tags={tags}
             cropCycles={cropCycles}
             defaultCropCycleId={typeof cropCycleId === "string" ? cropCycleId : undefined}
+            defaultDate={isoDateParam(date)}
             returnTo={returnTo}
             submitLabel="Save Sale"
           />

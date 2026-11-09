@@ -82,7 +82,9 @@ export const mapLaborEntry = (r: any): LaborEntry => ({
   categoryId: r.category_id,
   tagIds: r.tag_ids ?? [],
   note: r.note ?? undefined,
-  workerId: r.worker_id,
+  workerId: r.worker_id ?? undefined,
+  // Missing before the casual_labour migration has run.
+  workerLabel: r.worker_label ?? undefined,
   daysWorked: Number(r.days_worked),
   dailyRate: Number(r.daily_rate),
   // Missing before the work_dates migration has run.

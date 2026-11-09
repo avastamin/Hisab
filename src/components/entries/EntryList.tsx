@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import type { Category, CostCenter, ExpenseEntry, LaborEntry, SaleEntry, Worker, CropCycle } from "@/domain/types";
 import { formatDate, formatMoney } from "@/lib/format";
+import { labourName } from "@/lib/labour";
 
 export interface EntryItem {
   key: string;
@@ -60,7 +61,7 @@ export function buildEntryItems({
       key: `labor-${e.id}`,
       href: `/labor/${e.id}/edit?returnTo=${back}`,
       date: e.date,
-      title: `${workers.find((w) => w.id === e.workerId)?.name ?? "Worker"} · ${categoryName(e.categoryId)}`,
+      title: `${labourName(e, workers)} · ${categoryName(e.categoryId)}`,
       detail: withWhere(
         `${e.daysWorked} day${e.daysWorked === 1 ? "" : "s"} × ${formatMoney(e.dailyRate)}`,
         centerName(e.costCenterId),

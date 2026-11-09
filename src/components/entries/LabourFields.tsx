@@ -7,19 +7,26 @@ import type { Worker } from "@/domain/types";
 import { laborEntryAmount, round2 } from "@/domain/money";
 import { formatDate, formatMoney } from "@/lib/format";
 import { workerColor } from "@/lib/workerColors";
+import { CASUAL_COLOR, CASUAL_WORKER } from "@/lib/labour";
 import { addDates, sharedDates, toggleDate } from "@/lib/workDates";
 import { Field, Select, TextInput } from "@/components/form/Field";
 import { WorkCalendar, type CalendarMark } from "@/components/calendar/WorkCalendar";
 
 /** Days already recorded in other labour entries, shown faintly on the calendar for context. */
 export interface OtherWorkDays {
+  /** Empty for a casual worker. */
   workerId: string;
+  /** A casual worker's name, if given. */
+  label?: string;
   workDates: string[];
 }
 
 interface Row {
   key: number;
+  /** A worker's id, CASUAL_WORKER, or "" until one is chosen. */
   workerId: string;
+  /** A casual worker's optional name. */
+  label: string;
   dates: string[];
   days: string;
   /** Set once "Days worked" is typed in, e.g. for half days; until then it follows the number of picked days. */
@@ -28,29 +35,34 @@ interface Row {
 }
 
 // Worker, work days and daily rate for the Labour form and the Expense form's Labour tag. Each worker row submits
-// workerId / daysWorked / dailyRate / workDates fields in the same order, and the actions save one labour entry per
-// row. Days are picked on the calendar for whichever worker is active; each worker has their own colour.
+// workerId / workerLabel / daysWorked / dailyRate / workDates fields in the same order, and the actions save one
+// labour entry per row. Days are picked on the calendar for whichever worker is active; each worker has their own
+// colour. A row can be a casual worker instead of a saved one (as many as needed), with an optional name.
 export function LabourFields({
   workers,
   otherWorkDays,
   entry,
   initialRate,
+  initialDates = [],
   multiple,
 }: {
   workers: Worker[];
   otherWorkDays: OtherWorkDays[];
   /** The labour entry being edited. */
-  entry?: { workerId: string; workDates: string[]; daysWorked: number; dailyRate: number };
+  entry?: { workerId?: string; workerLabel?: string; workDates: string[]; daysWorked: number; dailyRate: number };
   initialRate?: string;
+  /** Days picked to start with on a new entry, e.g. the day it was added from on the calendar. */
+  initialDates?: string[];
   /** Whether more workers can be added (a new entry), or it's one worker only (editing one entry). */
   multiple: boolean;
 }) {
   const [rows, setRows] = useState<Row[]>(() => [
     {
       key: 0,
-      workerId: entry?.workerId ?? "",
-      dates: entry?.workDates ?? [],
-      days: String(entry?.daysWorked ?? 1),
+      workerId: entry ? (entry.workerId ?? CASUAL_WORKER) : "",
+      label: entry?.workerLabel ?? "",
+      dates: entry?.workDates ?? initialDates,
+      days: String(entry?.daysWorked ?? Math.max(initialDates.length, 1)),
       daysTouched: !!entry && entry.workDates.length > 0 && entry.workDates.length !== entry.daysWorked,
       rate: entry ? String(entry.dailyRate) : (initialRate ?? ""),
     },
@@ -60,9 +72,12 @@ export function LabourFields({
 
   const worker = (id: string) => workers.find((w) => w.id === id);
   const colorOf = (id: string) => {
+    if (id === CASUAL_WORKER) return CASUAL_COLOR;
     const w = worker(id);
     return w ? workerColor(w) : "var(--text-secondary)";
   };
+  const nameOf = (row: Pick<Row, "workerId" | "label">) =>
+    row.workerId === CASUAL_WORKER ? row.label.trim() || "Casual worker" : worker(row.workerId)?.name;
   const otherDatesOf = (id: string) => otherWorkDays.filter((o) => o.workerId === id).flatMap((o) => o.workDates);
 
   function update(key: number, change: (row: Row) => Partial<Row>) {
@@ -87,7 +102,7 @@ export function LabourFields({
 
   function addRow() {
     const key = Math.max(...rows.map((r) => r.key)) + 1;
-    setRows((current) => [...current, { key, workerId: "", dates: [], days: "1", daysTouched: false, rate: "" }]);
+    setRows((current) => [...current, { key, workerId: "", label: "", dates: [], days: "1", daysTouched: false, rate: "" }]);
     setActiveKey(key);
   }
 
@@ -104,21 +119,23 @@ export function LabourFields({
         ? r.dates.map((date) => ({
             date,
             workerId: r.workerId,
-            label: worker(r.workerId)?.name ?? "",
+            id: `row${r.key}-${date}`,
+            label: nameOf(r) ?? "",
             color: colorOf(r.workerId),
             solid: true,
           }))
         : [],
     ),
     // Other entries' days, unless the same worker is picked for that day here too.
-    ...otherWorkDays.flatMap((o) =>
+    ...otherWorkDays.flatMap((o, i) =>
       o.workDates
         .filter((date) => !rows.some((r) => r.workerId === o.workerId && r.dates.includes(date)))
         .map((date) => ({
           date,
           workerId: o.workerId,
-          label: worker(o.workerId)?.name ?? "",
-          color: colorOf(o.workerId),
+          id: `other${i}-${date}`,
+          label: o.workerId ? (worker(o.workerId)?.name ?? "") : o.label || "Casual worker",
+          color: o.workerId ? colorOf(o.workerId) : CASUAL_COLOR,
           solid: false,
         })),
     ),
@@ -140,16 +157,18 @@ export function LabourFields({
             )}
           >
             <input type="hidden" name="workDates" value={row.dates.join(",")} />
-            <div className="flex items-end gap-2">
+            <div className="flex items-start gap-2">
               <span
-                className="mb-3.5 h-3 w-3 shrink-0 rounded-full"
+                className="mt-10 h-3 w-3 shrink-0 rounded-full"
                 style={{ background: colorOf(row.workerId) }}
                 aria-hidden
               />
-              <div className="min-w-0 flex-1">
+              {/* A casual worker's name sits beside the worker, or under it on a phone. */}
+              <div className="grid min-w-0 flex-1 gap-3 sm:grid-cols-2">
                 <Field label={i === 0 ? "Worker" : `Worker ${i + 1}`}>
                   <Select
                     name="workerId"
+                    className="w-full min-w-0"
                     required
                     value={row.workerId}
                     onChange={(e) => chooseWorker(row.key, e.target.value)}
@@ -164,22 +183,37 @@ export function LabourFields({
                           {w.name}
                         </option>
                       ))}
+                    <option value={CASUAL_WORKER}>Casual worker (not saved)</option>
                   </Select>
                 </Field>
+                {row.workerId === CASUAL_WORKER ? (
+                  <Field label="Name (optional)">
+                    <TextInput
+                      type="text"
+                      name="workerLabel"
+                      className="w-full min-w-0"
+                      placeholder="e.g. Helper 2"
+                      value={row.label}
+                      onChange={(e) => update(row.key, () => ({ label: e.target.value }))}
+                    />
+                  </Field>
+                ) : (
+                  <input type="hidden" name="workerLabel" value="" />
+                )}
               </div>
               {rows.length > 1 ? (
                 <button
                   type="button"
                   onClick={() => removeRow(row.key)}
-                  className="mb-1 rounded-full p-2 text-text-secondary hover:text-negative"
-                  aria-label={`Remove ${worker(row.workerId)?.name ?? "worker"}`}
+                  className="mt-7 rounded-full p-2 text-text-secondary hover:text-negative"
+                  aria-label={`Remove ${nameOf(row) ?? "worker"}`}
                 >
                   <X size={18} />
                 </button>
               ) : null}
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 [&_input]:w-full [&_input]:min-w-0 [&>label]:min-w-0">
               <Field label="Days worked">
                 <TextInput
                   type="number"
@@ -239,7 +273,7 @@ export function LabourFields({
         );
       })}
 
-      {multiple && rows.length < workers.length ? (
+      {multiple ? (
         <button
           type="button"
           onClick={addRow}
@@ -274,18 +308,18 @@ export function LabourFields({
                   className="h-2.5 w-2.5 rounded-full"
                   style={{ background: row.key === active.key ? "#fff" : colorOf(row.workerId) }}
                 />
-                {worker(row.workerId)?.name ?? "Choose a worker"}
+                {nameOf(row) ?? "Choose a worker"}
               </button>
             ))}
           </div>
         ) : null}
         <p className="text-xs text-text-secondary">
           {active.workerId
-            ? `Tap the days ${worker(active.workerId)?.name} worked; tap again to remove. Drag (or press and drag on a phone) to pick several.`
+            ? `Tap the days ${nameOf(active)} worked; tap again to remove. Drag (or press and drag on a phone) to pick several.`
             : "Choose a worker, then tap the days they worked."}
           {otherWorkDays.length > 0 ? " Outlined names are days already recorded in other entries." : ""}
         </p>
-        <WorkCalendar marks={marks} onPickDates={pickDates} initialDate={entry?.workDates[0]} />
+        <WorkCalendar marks={marks} onPickDates={pickDates} initialDate={entry?.workDates[0] ?? initialDates[0]} />
       </div>
 
       <p className="text-sm text-text-secondary">

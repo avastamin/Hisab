@@ -79,7 +79,7 @@ export function chartRangeFromParam(value: unknown): ChartRange {
 }
 
 /** A real "YYYY-MM-DD" date (not e.g. 2026-02-31), or undefined. */
-function isoDateParam(value: unknown): string | undefined {
+export function isoDateParam(value: unknown): string | undefined {
   if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return undefined;
   const d = new Date(`${value}T00:00:00Z`);
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value ? value : undefined;
