@@ -97,20 +97,26 @@ export default async function CropCycleDetailPage({ params }: PageProps<"/crop-c
             <EntryList entries={entries} emptyText="No expenses or sales yet." />
           </Card>
 
-          <div className="grid gap-2 sm:grid-cols-2">
-            <Link
-              href={`/add-expense?costCenterId=${costCenter?.id ?? ""}&returnTo=${returnTo}`}
-              className="rounded-lg border border-border bg-surface-alt px-4 py-3 text-center font-semibold text-text-primary"
-            >
-              Add Expense
-            </Link>
-            <Link
-              href={`/add-sale?cropCycleId=${cycle.id}&returnTo=${returnTo}`}
-              className="rounded-lg border border-border bg-surface-alt px-4 py-3 text-center font-semibold text-text-primary"
-            >
-              Add Sale
-            </Link>
-          </div>
+          {cycle.status === "closed" ? (
+            <p className="text-center text-sm text-text-secondary">
+              This crop cycle is closed. Change its status to add expenses, labour or sales.
+            </p>
+          ) : (
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Link
+                href={`/add-expense?costCenterId=${costCenter?.id ?? ""}&returnTo=${returnTo}`}
+                className="rounded-lg border border-border bg-surface-alt px-4 py-3 text-center font-semibold text-text-primary"
+              >
+                Add Expense
+              </Link>
+              <Link
+                href={`/add-sale?cropCycleId=${cycle.id}&returnTo=${returnTo}`}
+                className="rounded-lg border border-border bg-surface-alt px-4 py-3 text-center font-semibold text-text-primary"
+              >
+                Add Sale
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </div>

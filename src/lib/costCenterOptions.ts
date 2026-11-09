@@ -19,13 +19,31 @@ export function defaultGroupForCostCenter(type: CostCenter["type"]): CategoryGro
   return type === "crop_cycle" || type === "farm" ? "agro" : "household";
 }
 
-/** Friendly label list for every cost center: crop cycles by their cycle label, others by name + type. */
-export function costCenterOptions(costCenters: CostCenter[], cropCycles: CropCycle[]): SelectOption[] {
-  return costCenters.map((center) => {
+/** Crop cycles still open for new entries. `keepId` keeps an entry's own (possibly closed) cycle selectable on its edit form. */
+export function openCropCycles(cropCycles: CropCycle[], keepId?: string): CropCycle[] {
+  return cropCycles.filter((c) => c.status !== "closed" || c.id === keepId);
+}
+
+/**
+ * Friendly label list for every cost center: crop cycles by their cycle label, others by name + type. Closed crop
+ * cycles are left out, since nothing new can be logged to them, except `keepId` (the entry being edited).
+ */
+export function costCenterOptions(costCenters: CostCenter[], cropCycles: CropCycle[], keepId?: string): SelectOption[] {
+  const closed = new Set(cropCycles.filter((c) => c.status === "closed").map((c) => c.id));
+  const open = costCenters.filter((c) => c.id === keepId || !(c.cropCycleId && closed.has(c.cropCycleId)));
+  return open.map((center) => {
     if (center.type === "crop_cycle") {
       const cycle = cropCycles.find((c) => c.id === center.cropCycleId);
-      return { id: center.id, label: cycle ? cycle.label : center.name, group: defaultGroupForCostCenter(center.type) };
+      return {
+        id: center.id,
+        label: cycle ? cycle.label : center.name,
+        group: defaultGroupForCostCenter(center.type),
+      };
     }
-    return { id: center.id, label: `${center.name} (${TYPE_LABEL[center.type]})`, group: defaultGroupForCostCenter(center.type) };
+    return {
+      id: center.id,
+      label: `${center.name} (${TYPE_LABEL[center.type]})`,
+      group: defaultGroupForCostCenter(center.type),
+    };
   });
 }

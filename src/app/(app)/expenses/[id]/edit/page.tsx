@@ -25,7 +25,7 @@ export default async function EditExpensePage({ params, searchParams }: PageProp
           action={updateExpense}
           categories={categories.filter((c) => c.kind === "cost")}
           tags={tags}
-          costOptions={costCenterOptions(costCenters, cropCycles)}
+          costOptions={costCenterOptions(costCenters, cropCycles, entry.costCenterId)}
           workers={workers}
           otherWorkDays={otherWorkDays(laborEntries)}
           entry={entry}

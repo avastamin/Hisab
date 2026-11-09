@@ -30,6 +30,41 @@ async function failed(error: { code?: string; message: string } | null, what: st
   return true;
 }
 
+type Supabase = Awaited<ReturnType<typeof createClient>>;
+
+/**
+ * Nothing new can be logged to a closed crop cycle. Returns true (after flashing why) when the form points at one.
+ * When editing, `existing` names the entry's table and id: an entry that already sits on a closed cycle can still be
+ * edited in place, it just can't be moved onto one.
+ */
+async function targetsClosedCrop(
+  supabase: Supabase,
+  formData: FormData,
+  kind: "cost" | "sale",
+  existing?: { table: string; id: string },
+): Promise<boolean> {
+  const column = kind === "sale" ? "crop_cycle_id" : "cost_center_id";
+  const target = String(formData.get(kind === "sale" ? "cropCycleId" : "costCenterId") ?? "");
+  if (!target) return false;
+
+  if (existing) {
+    const { data } = await supabase.from(existing.table).select(column).eq("id", existing.id).maybeSingle();
+    if (data && (data as Record<string, unknown>)[column] === target) return false;
+  }
+
+  let cycleId: string | null = target;
+  if (kind === "cost") {
+    const { data } = await supabase.from("cost_centers").select("crop_cycle_id").eq("id", target).maybeSingle();
+    cycleId = data?.crop_cycle_id ?? null;
+  }
+  if (!cycleId) return false;
+
+  const { data: cycle } = await supabase.from("crop_cycles").select("status, label").eq("id", cycleId).maybeSingle();
+  if (cycle?.status !== "closed") return false;
+  await flash("error", `${cycle.label} is closed. Reopen it to add expenses, labour or sales.`);
+  return true;
+}
+
 /** Revalidates everything (totals show up on several pages) and goes back to where the form was opened from. */
 function done(formData: FormData): never {
   revalidatePath("/", "layout");
@@ -113,6 +148,7 @@ function saleRow(formData: FormData) {
 
 export async function addExpense(formData: FormData) {
   const { supabase, user } = await requireUser();
+  if (await targetsClosedCrop(supabase, formData, "cost")) return;
 
   // Picking the Labour tag on the expense form adds a worker, which makes it a labour entry.
   if (hasWorker(formData)) {
@@ -128,6 +164,8 @@ export async function addExpense(formData: FormData) {
 }
 
 export async function addLabor(formData: FormData) {
+  const { supabase } = await requireUser();
+  if (await targetsClosedCrop(supabase, formData, "cost")) return;
   const count = await insertLabour(formData);
   if (count === null) return;
   await flash("success", labourSaved(count));
@@ -136,6 +174,7 @@ export async function addLabor(formData: FormData) {
 
 export async function addSale(formData: FormData) {
   const { supabase, user } = await requireUser();
+  if (await targetsClosedCrop(supabase, formData, "sale")) return;
   const { error } = await supabase.from("sale_entries").insert({ user_id: user.id, ...saleRow(formData) });
   if (await failed(error, "save the sale")) return;
   await flash("success", "Sale saved");
@@ -154,6 +193,8 @@ type EntryKind = keyof typeof ENTRY_KINDS;
 async function updateEntry(kind: EntryKind, formData: FormData) {
   const { supabase } = await requireUser();
   const { table, row, label } = ENTRY_KINDS[kind];
+  const existing = { table, id: String(formData.get("id")) };
+  if (await targetsClosedCrop(supabase, formData, kind === "sale" ? "sale" : "cost", existing)) return;
   const { error } = await supabase.from(table).update(row(formData)).eq("id", String(formData.get("id")));
   if (await failed(error, `update the ${label.toLowerCase()}`)) return;
   await flash("success", `${label} updated`);
@@ -174,6 +215,8 @@ export async function updateExpense(formData: FormData) {
 
   // A worker was added to a Labour expense: move it to labor_entries (one per worker). Insert first, so a failed
   // delete can only leave a duplicate to remove by hand, never lose the entry.
+  const existing = { table: "expense_entries", id: String(formData.get("id")) };
+  if (await targetsClosedCrop((await requireUser()).supabase, formData, "cost", existing)) return;
   if ((await insertLabour(formData)) === null) return;
   const { supabase } = await requireUser();
   const { error: deleteError } = await supabase.from("expense_entries").delete().eq("id", String(formData.get("id")));
